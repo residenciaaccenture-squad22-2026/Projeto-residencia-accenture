@@ -1,78 +1,56 @@
-# residencia-accenture
+# Projeto Residência Accenture - Reserva de Salas e Equipamentos
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+## 📌 Descrição
+Sistema backend desenvolvido com Quarkus para gerenciamento de reservas de salas e equipamentos.  
+O projeto utiliza Supabase como banco de dados PostgreSQL e está preparado para integração com APIs e inteligência artificial.
 
-If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
+---
 
-## Running the application in dev mode
+## 🚀 Tecnologias
+- Java
+- Quarkus
+- PostgreSQL (Supabase)
+- Maven
+- Git/GitHub
 
-You can run your application in dev mode that enables live coding using:
+---
 
-```shell script
+## ⚙️ Configuração
+
+Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+
+```env
+DB_USER=seu_usuario
+DB_PASSWORD=sua_senha
+DB_URL=jdbc:postgresql://host:porta/postgres?sslmode=require
+
+SUPABASE_URL=https://seu_projeto.supabase.co
+SUPABASE_ANON_KEY=sua_chave
+▶️ Executando o projeto
+Windows (PowerShell)
+.\mvnw quarkus:dev
+Linux/Mac
 ./mvnw quarkus:dev
-```
+🧪 Teste inicial
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
+Acesse no navegador:
 
-## Packaging and running the application
+http://localhost:8080/hello
 
-The application can be packaged using:
+Resposta esperada:
 
-```shell script
-./mvnw package
-```
+Hello from Quarkus REST
+🔒 Segurança
+O arquivo .env contém informações sensíveis
+NÃO deve ser enviado ao GitHub
+Está configurado no .gitignore
+📊 Status do projeto
 
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
-
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
-
-If you want to build an _über-jar_, execute the following command:
-
-```shell script
-./mvnw package -Dquarkus.package.jar.type=uber-jar
-```
-
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
-
-## Creating a native executable
-
-You can create a native executable using:
-
-```shell script
-./mvnw package -Dnative
-```
-
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
-
-```shell script
-./mvnw package -Dnative -Dquarkus.native.container-build=true
-```
-
-You can then execute your native executable with: `./target/residencia-accenture-1.0.0-SNAPSHOT-runner`
-
-If you want to learn more about building native executables, please consult <https://quarkus.io/guides/maven-tooling>.
-
-## Related Guides
-
-- REST Jackson ([guide](https://quarkus.io/guides/rest#json-serialisation)): Jackson serialization support for Quarkus REST. This extension is not compatible with the quarkus-resteasy extension, or any of the extensions that depend on it
-- Hibernate ORM with Panache ([guide](https://quarkus.io/guides/hibernate-orm-panache)): Simplify your persistence code for Hibernate ORM via the active record or the repository pattern
-- JDBC Driver - PostgreSQL ([guide](https://quarkus.io/guides/datasource)): Connect to the PostgreSQL database via JDBC
-
-## Provided Code
-
-### Hibernate ORM
-
-Create your first JPA entity
-
-[Related guide section...](https://quarkus.io/guides/hibernate-orm)
+✔️ Projeto Quarkus configurado
+✔️ Integração com Supabase realizada
+✔️ Banco PostgreSQL conectado
+✔️ Variáveis protegidas com .env
+✔️ Código versionado no GitHub
 
 
-[Related Hibernate with Panache section...](https://quarkus.io/guides/hibernate-orm-panache)
-
-
-### REST
-
-Easily start your REST Web Services
-
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
+Projeto desenvolvido para a Residência Accenture.
