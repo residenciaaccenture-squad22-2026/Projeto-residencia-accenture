@@ -9,8 +9,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "salas")
-public class Sala extends PanacheEntityBase {
+@Table(name = "equipamentos")
+public class Equipamento extends PanacheEntityBase {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,21 +19,21 @@ public class Sala extends PanacheEntityBase {
     @Column(nullable = false)
     private String nome;
 
-    private int capacidade;
+    private String descricao;
 
-    private String localizacao;
+    private String tipo;
 
     @Column(nullable = false)
     private String status;
 
-    public Sala() {
+    public Equipamento() {
     }
 
-    public Sala(Long id, String nome, int capacidade, String localizacao, String status) {
+    public Equipamento(Long id, String nome, String descricao, String tipo, String status) {
         this.id = id;
         this.nome = nome;
-        this.capacidade = capacidade;
-        this.localizacao = localizacao;
+        this.descricao = descricao;
+        this.tipo = tipo;
         this.status = status;
     }
 
@@ -53,20 +53,20 @@ public class Sala extends PanacheEntityBase {
         this.nome = nome;
     }
 
-    public int getCapacidade() {
-        return capacidade;
+    public String getDescricao() {
+        return descricao;
     }
 
-    public void setCapacidade(int capacidade) {
-        this.capacidade = capacidade;
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
     }
 
-    public String getLocalizacao() {
-        return localizacao;
+    public String getTipo() {
+        return tipo;
     }
 
-    public void setLocalizacao(String localizacao) {
-        this.localizacao = localizacao;
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
     }
 
     public String getStatus() {

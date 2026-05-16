@@ -3,21 +3,22 @@ package org.acme.repository;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.acme.model.Sala;
+import org.acme.model.Equipamento;
 import org.acme.model.StatusReserva;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class SalaRepository implements PanacheRepository<Sala> {
+public class EquipamentoRepository implements PanacheRepository<Equipamento> {
 
-    public List<Sala> listarDisponiveis(LocalDateTime inicio, LocalDateTime fim) {
+    public List<Equipamento> listarDisponiveis(LocalDateTime inicio, LocalDateTime fim) {
         return list("""
                 id not in (
-                    select reserva.sala.id
+                    select reserva.equipamento.id
                     from Reserva reserva
-                    where reserva.status = ?1
+                    where reserva.equipamento is not null
+                    and reserva.status = ?1
                     and reserva.dataHoraInicio < ?3
                     and reserva.dataHoraFim > ?2
                 )

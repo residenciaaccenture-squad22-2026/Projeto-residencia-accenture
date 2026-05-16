@@ -17,4 +17,14 @@ class GreetingResourceTest {
              .body(is("Hello from Quarkus REST"));
     }
 
+    @Test
+    void testStatusEndpoint() {
+        given()
+          .when().get("/status")
+          .then()
+             .statusCode(200)
+             .body("status", is("online"))
+             .body("nome", is("residencia-accenture-api"));
+    }
+
 }
