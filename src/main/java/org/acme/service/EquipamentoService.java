@@ -3,6 +3,7 @@ package org.acme.service;
 import java.util.List;
 
 import org.acme.model.Equipamento;
+import org.acme.model.StatusRecurso;
 import org.acme.repository.EquipamentoRepository;
 
 import io.quarkus.cache.CacheInvalidateAll;
@@ -29,6 +30,7 @@ public class EquipamentoService {
     @Transactional
     @CacheInvalidateAll(cacheName = "equipamentos")
     public Equipamento cadastrarEquipamento(Equipamento equipamento) {
+        preencherStatusPadrao(equipamento);
         equipamentoRepository.persist(equipamento);
         return equipamento;
     }
@@ -45,7 +47,8 @@ public class EquipamentoService {
         equipamento.setNome(dadosAtualizados.getNome());
         equipamento.setDescricao(dadosAtualizados.getDescricao());
         equipamento.setTipo(dadosAtualizados.getTipo());
-        equipamento.setStatus(dadosAtualizados.getStatus());
+        equipamento.setStatus(
+                dadosAtualizados.getStatus() != null ? dadosAtualizados.getStatus() : StatusRecurso.DISPONIVEL);
 
         return equipamento;
     }
@@ -54,5 +57,11 @@ public class EquipamentoService {
     @CacheInvalidateAll(cacheName = "equipamentos")
     public boolean removerEquipamento(Long id) {
         return equipamentoRepository.deleteById(id);
+    }
+
+    private void preencherStatusPadrao(Equipamento equipamento) {
+        if (equipamento.getStatus() == null) {
+            equipamento.setStatus(StatusRecurso.DISPONIVEL);
+        }
     }
 }

@@ -5,11 +5,13 @@ import java.util.List;
 
 import org.acme.dto.DisponibilidadeResponse;
 import org.acme.dto.ReservaRequest;
+import org.acme.dto.ReservaResponse;
 import org.acme.model.Reserva;
 import org.acme.service.ReservaService;
 import org.acme.util.DataHoraUtil;
 
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -32,24 +34,28 @@ public class ReservaController {
     ReservaService reservaService;
 
     @GET
-    public List<Reserva> listarReservas(@QueryParam("salaId") Long salaId) {
+    public List<ReservaResponse> listarReservas(@QueryParam("salaId") Long salaId) {
         if (salaId != null) {
-            return reservaService.listarPorSala(salaId);
+            return reservaService.listarPorSala(salaId).stream()
+                    .map(ReservaResponse::from)
+                    .toList();
         }
 
-        return reservaService.listarReservas();
+        return reservaService.listarReservas().stream()
+                .map(ReservaResponse::from)
+                .toList();
     }
 
     @GET
     @Path("/{id}")
-    public Reserva buscarReserva(@PathParam("id") Long id) {
+    public ReservaResponse buscarReserva(@PathParam("id") Long id) {
         Reserva reserva = reservaService.buscarPorId(id);
 
         if (reserva == null) {
             throw new NotFoundException("Reserva nao encontrada");
         }
 
-        return reserva;
+        return ReservaResponse.from(reserva);
     }
 
     @GET
@@ -81,37 +87,37 @@ public class ReservaController {
     }
 
     @POST
-    public Response criarReserva(ReservaRequest request) {
+    public Response criarReserva(@Valid ReservaRequest request) {
         Reserva reserva = reservaService.criarReserva(request);
 
         return Response
                 .created(URI.create("/reservas/" + reserva.getId()))
-                .entity(reserva)
+                .entity(ReservaResponse.from(reserva))
                 .build();
     }
 
     @PUT
     @Path("/{id}")
-    public Reserva atualizarReserva(@PathParam("id") Long id, ReservaRequest request) {
+    public ReservaResponse atualizarReserva(@PathParam("id") Long id, @Valid ReservaRequest request) {
         Reserva reserva = reservaService.atualizarReserva(id, request);
 
         if (reserva == null) {
             throw new NotFoundException("Reserva nao encontrada");
         }
 
-        return reserva;
+        return ReservaResponse.from(reserva);
     }
 
     @PUT
     @Path("/{id}/cancelar")
-    public Reserva cancelarReserva(@PathParam("id") Long id) {
+    public ReservaResponse cancelarReserva(@PathParam("id") Long id) {
         Reserva reserva = reservaService.cancelarReserva(id);
 
         if (reserva == null) {
             throw new NotFoundException("Reserva nao encontrada");
         }
 
-        return reserva;
+        return ReservaResponse.from(reserva);
     }
 
     @DELETE

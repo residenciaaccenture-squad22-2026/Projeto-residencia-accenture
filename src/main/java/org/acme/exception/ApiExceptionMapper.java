@@ -2,6 +2,7 @@ package org.acme.exception;
 
 import org.acme.dto.ErroResponse;
 
+import jakarta.validation.ConstraintViolationException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -22,7 +23,15 @@ public class ApiExceptionMapper implements ExceptionMapper<Throwable> {
         String erro = Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase();
         String mensagem = "Erro interno no servidor";
 
-        if (exception instanceof WebApplicationException webApplicationException) {
+        if (exception instanceof ConstraintViolationException validationException) {
+            status = Response.Status.BAD_REQUEST.getStatusCode();
+            erro = Response.Status.BAD_REQUEST.getReasonPhrase();
+            mensagem = validationException.getConstraintViolations().stream()
+                    .map(violation -> violation.getMessage())
+                    .sorted()
+                    .findFirst()
+                    .orElse("Dados invalidos");
+        } else if (exception instanceof WebApplicationException webApplicationException) {
             status = webApplicationException.getResponse().getStatus();
             Response.Status responseStatus = Response.Status.fromStatusCode(status);
             erro = responseStatus != null ? responseStatus.getReasonPhrase() : "Erro HTTP";

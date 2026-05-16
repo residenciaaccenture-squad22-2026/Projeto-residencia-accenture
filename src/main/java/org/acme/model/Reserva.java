@@ -31,17 +31,17 @@ public class Reserva extends PanacheEntityBase {
     @JoinColumn(name = "equipamento_id")
     private Equipamento equipamento;
 
-    @Column(nullable = false)
+    @Column(name = "responsavel", nullable = false)
     private String responsavel;
 
-    @Column(nullable = false)
+    @Column(name = "data_hora_inicio", nullable = false)
     private LocalDateTime dataHoraInicio;
 
-    @Column(nullable = false)
+    @Column(name = "data_hora_fim", nullable = false)
     private LocalDateTime dataHoraFim;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "status", nullable = false)
     private StatusReserva status = StatusReserva.ATIVA;
 
     public Long getId() {

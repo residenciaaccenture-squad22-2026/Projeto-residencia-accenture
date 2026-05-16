@@ -1,45 +1,34 @@
-package org.acme.model;
+package org.acme.dto;
 
-import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import org.acme.model.Equipamento;
+import org.acme.model.StatusRecurso;
 
-@Entity
-@Table(name = "equipamentos")
-public class Equipamento extends PanacheEntityBase {
+public class EquipamentoResponse {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "nome", nullable = false)
     private String nome;
-
-    @Column(name = "descricao")
     private String descricao;
-
-    @Column(name = "tipo", nullable = false)
     private String tipo;
+    private StatusRecurso status;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private StatusRecurso status = StatusRecurso.DISPONIVEL;
-
-    public Equipamento() {
+    public EquipamentoResponse() {
     }
 
-    public Equipamento(Long id, String nome, String descricao, String tipo, StatusRecurso status) {
+    public EquipamentoResponse(Long id, String nome, String descricao, String tipo, StatusRecurso status) {
         this.id = id;
         this.nome = nome;
         this.descricao = descricao;
         this.tipo = tipo;
         this.status = status;
+    }
+
+    public static EquipamentoResponse from(Equipamento equipamento) {
+        return new EquipamentoResponse(
+                equipamento.getId(),
+                equipamento.getNome(),
+                equipamento.getDescricao(),
+                equipamento.getTipo(),
+                equipamento.getStatus());
     }
 
     public Long getId() {

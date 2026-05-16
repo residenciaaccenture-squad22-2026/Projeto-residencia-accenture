@@ -18,6 +18,6 @@ public class StatusController {
         return new StatusApiResponse(
                 "residencia-accenture-api",
                 "online",
-                List.of("/salas", "/equipamentos", "/reservas", "/disponibilidade"));
+                List.of("/salas", "/equipamentos", "/reservas", "/disponibilidade", "/q/health", "/swagger-ui"));
     }
 }

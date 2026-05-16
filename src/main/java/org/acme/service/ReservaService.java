@@ -7,6 +7,7 @@ import org.acme.dto.ReservaRequest;
 import org.acme.model.Equipamento;
 import org.acme.model.Reserva;
 import org.acme.model.Sala;
+import org.acme.model.StatusRecurso;
 import org.acme.model.StatusReserva;
 import org.acme.repository.EquipamentoRepository;
 import org.acme.repository.ReservaRepository;
@@ -44,11 +45,19 @@ public class ReservaService {
 
     public boolean salaDisponivel(Long salaId, LocalDateTime inicio, LocalDateTime fim) {
         validarPeriodo(inicio, fim);
+        Sala sala = buscarSalaObrigatoria(salaId);
+        if (sala.getStatus() != StatusRecurso.DISPONIVEL) {
+            return false;
+        }
         return !reservaRepository.existeConflitoSala(salaId, inicio, fim, null);
     }
 
     public boolean equipamentoDisponivel(Long equipamentoId, LocalDateTime inicio, LocalDateTime fim) {
         validarPeriodo(inicio, fim);
+        Equipamento equipamento = buscarEquipamentoObrigatorio(equipamentoId);
+        if (equipamento.getStatus() != StatusRecurso.DISPONIVEL) {
+            return false;
+        }
         return !reservaRepository.existeConflitoEquipamento(equipamentoId, inicio, fim, null);
     }
 
@@ -92,16 +101,16 @@ public class ReservaService {
     private void aplicarDados(Reserva reserva, ReservaRequest request, Long reservaIgnoradaId) {
         validarRequest(request);
 
-        Sala sala = salaRepository.findById(request.getSalaId());
-        if (sala == null) {
-            throw new NotFoundException("Sala nao encontrada");
+        Sala sala = buscarSalaObrigatoria(request.getSalaId());
+        if (sala.getStatus() != StatusRecurso.DISPONIVEL) {
+            throw new BadRequestException("Sala indisponivel no periodo informado");
         }
 
         Equipamento equipamento = null;
         if (request.getEquipamentoId() != null) {
-            equipamento = equipamentoRepository.findById(request.getEquipamentoId());
-            if (equipamento == null) {
-                throw new NotFoundException("Equipamento nao encontrado");
+            equipamento = buscarEquipamentoObrigatorio(request.getEquipamentoId());
+            if (equipamento.getStatus() != StatusRecurso.DISPONIVEL) {
+                throw new BadRequestException("Equipamento indisponivel no periodo informado");
             }
         }
 
@@ -168,5 +177,21 @@ public class ReservaService {
         if (equipamentoOcupado) {
             throw new BadRequestException("Equipamento indisponivel no periodo informado");
         }
+    }
+
+    private Sala buscarSalaObrigatoria(Long salaId) {
+        Sala sala = salaRepository.findById(salaId);
+        if (sala == null) {
+            throw new NotFoundException("Sala nao encontrada");
+        }
+        return sala;
+    }
+
+    private Equipamento buscarEquipamentoObrigatorio(Long equipamentoId) {
+        Equipamento equipamento = equipamentoRepository.findById(equipamentoId);
+        if (equipamento == null) {
+            throw new NotFoundException("Equipamento nao encontrado");
+        }
+        return equipamento;
     }
 }

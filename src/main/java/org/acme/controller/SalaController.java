@@ -3,10 +3,14 @@ package org.acme.controller;
 import java.net.URI;
 import java.util.List;
 
+import org.acme.dto.ApiMapper;
+import org.acme.dto.SalaRequest;
+import org.acme.dto.SalaResponse;
 import org.acme.model.Sala;
 import org.acme.service.SalaService;
 
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -28,42 +32,44 @@ public class SalaController {
     SalaService salaService;
 
     @GET
-    public List<Sala> listarSalas() {
-        return salaService.listarSalas();
+    public List<SalaResponse> listarSalas() {
+        return salaService.listarSalas().stream()
+                .map(SalaResponse::from)
+                .toList();
     }
 
     @GET
     @Path("/{id}")
-    public Sala buscarSala(@PathParam("id") Long id) {
+    public SalaResponse buscarSala(@PathParam("id") Long id) {
         Sala sala = salaService.buscarPorId(id);
 
         if (sala == null) {
             throw new NotFoundException("Sala nao encontrada");
         }
 
-        return sala;
+        return SalaResponse.from(sala);
     }
 
     @POST
-    public Response cadastrarSala(Sala sala) {
-        Sala salaCadastrada = salaService.cadastrarSala(sala);
+    public Response cadastrarSala(@Valid SalaRequest request) {
+        Sala salaCadastrada = salaService.cadastrarSala(ApiMapper.toSala(request));
 
         return Response
                 .created(URI.create("/salas/" + salaCadastrada.getId()))
-                .entity(salaCadastrada)
+                .entity(SalaResponse.from(salaCadastrada))
                 .build();
     }
 
     @PUT
     @Path("/{id}")
-    public Sala atualizarSala(@PathParam("id") Long id, Sala sala) {
-        Sala salaAtualizada = salaService.atualizarSala(id, sala);
+    public SalaResponse atualizarSala(@PathParam("id") Long id, @Valid SalaRequest request) {
+        Sala salaAtualizada = salaService.atualizarSala(id, ApiMapper.toSala(request));
 
         if (salaAtualizada == null) {
             throw new NotFoundException("Sala nao encontrada");
         }
 
-        return salaAtualizada;
+        return SalaResponse.from(salaAtualizada);
     }
 
     @DELETE

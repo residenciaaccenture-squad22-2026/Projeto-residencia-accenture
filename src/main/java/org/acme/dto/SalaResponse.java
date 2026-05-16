@@ -1,45 +1,34 @@
-package org.acme.model;
+package org.acme.dto;
 
-import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import org.acme.model.Sala;
+import org.acme.model.StatusRecurso;
 
-@Entity
-@Table(name = "salas")
-public class Sala extends PanacheEntityBase {
+public class SalaResponse {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "nome", nullable = false)
     private String nome;
-
-    @Column(name = "capacidade", nullable = false)
     private int capacidade;
-
-    @Column(name = "localizacao")
     private String localizacao;
+    private StatusRecurso status;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private StatusRecurso status = StatusRecurso.DISPONIVEL;
-
-    public Sala() {
+    public SalaResponse() {
     }
 
-    public Sala(Long id, String nome, int capacidade, String localizacao, StatusRecurso status) {
+    public SalaResponse(Long id, String nome, int capacidade, String localizacao, StatusRecurso status) {
         this.id = id;
         this.nome = nome;
         this.capacidade = capacidade;
         this.localizacao = localizacao;
         this.status = status;
+    }
+
+    public static SalaResponse from(Sala sala) {
+        return new SalaResponse(
+                sala.getId(),
+                sala.getNome(),
+                sala.getCapacidade(),
+                sala.getLocalizacao(),
+                sala.getStatus());
     }
 
     public Long getId() {

@@ -3,10 +3,14 @@ package org.acme.controller;
 import java.net.URI;
 import java.util.List;
 
+import org.acme.dto.ApiMapper;
+import org.acme.dto.EquipamentoRequest;
+import org.acme.dto.EquipamentoResponse;
 import org.acme.model.Equipamento;
 import org.acme.service.EquipamentoService;
 
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -28,42 +32,44 @@ public class EquipamentoController {
     EquipamentoService equipamentoService;
 
     @GET
-    public List<Equipamento> listarEquipamentos() {
-        return equipamentoService.listarEquipamentos();
+    public List<EquipamentoResponse> listarEquipamentos() {
+        return equipamentoService.listarEquipamentos().stream()
+                .map(EquipamentoResponse::from)
+                .toList();
     }
 
     @GET
     @Path("/{id}")
-    public Equipamento buscarEquipamento(@PathParam("id") Long id) {
+    public EquipamentoResponse buscarEquipamento(@PathParam("id") Long id) {
         Equipamento equipamento = equipamentoService.buscarPorId(id);
 
         if (equipamento == null) {
             throw new NotFoundException("Equipamento nao encontrado");
         }
 
-        return equipamento;
+        return EquipamentoResponse.from(equipamento);
     }
 
     @POST
-    public Response cadastrarEquipamento(Equipamento equipamento) {
-        Equipamento equipamentoCadastrado = equipamentoService.cadastrarEquipamento(equipamento);
+    public Response cadastrarEquipamento(@Valid EquipamentoRequest request) {
+        Equipamento equipamentoCadastrado = equipamentoService.cadastrarEquipamento(ApiMapper.toEquipamento(request));
 
         return Response
                 .created(URI.create("/equipamentos/" + equipamentoCadastrado.getId()))
-                .entity(equipamentoCadastrado)
+                .entity(EquipamentoResponse.from(equipamentoCadastrado))
                 .build();
     }
 
     @PUT
     @Path("/{id}")
-    public Equipamento atualizarEquipamento(@PathParam("id") Long id, Equipamento equipamento) {
-        Equipamento equipamentoAtualizado = equipamentoService.atualizarEquipamento(id, equipamento);
+    public EquipamentoResponse atualizarEquipamento(@PathParam("id") Long id, @Valid EquipamentoRequest request) {
+        Equipamento equipamentoAtualizado = equipamentoService.atualizarEquipamento(id, ApiMapper.toEquipamento(request));
 
         if (equipamentoAtualizado == null) {
             throw new NotFoundException("Equipamento nao encontrado");
         }
 
-        return equipamentoAtualizado;
+        return EquipamentoResponse.from(equipamentoAtualizado);
     }
 
     @DELETE

@@ -3,6 +3,7 @@ package org.acme.service;
 import java.util.List;
 
 import org.acme.model.Sala;
+import org.acme.model.StatusRecurso;
 import org.acme.repository.SalaRepository;
 
 import io.quarkus.cache.CacheInvalidateAll;
@@ -29,6 +30,7 @@ public class SalaService {
     @Transactional
     @CacheInvalidateAll(cacheName = "salas")
     public Sala cadastrarSala(Sala sala) {
+        preencherStatusPadrao(sala);
         salaRepository.persist(sala);
         return sala;
     }
@@ -45,7 +47,7 @@ public class SalaService {
         sala.setNome(dadosAtualizados.getNome());
         sala.setCapacidade(dadosAtualizados.getCapacidade());
         sala.setLocalizacao(dadosAtualizados.getLocalizacao());
-        sala.setStatus(dadosAtualizados.getStatus());
+        sala.setStatus(dadosAtualizados.getStatus() != null ? dadosAtualizados.getStatus() : StatusRecurso.DISPONIVEL);
 
         return sala;
     }
@@ -54,5 +56,11 @@ public class SalaService {
     @CacheInvalidateAll(cacheName = "salas")
     public boolean removerSala(Long id) {
         return salaRepository.deleteById(id);
+    }
+
+    private void preencherStatusPadrao(Sala sala) {
+        if (sala.getStatus() == null) {
+            sala.setStatus(StatusRecurso.DISPONIVEL);
+        }
     }
 }
