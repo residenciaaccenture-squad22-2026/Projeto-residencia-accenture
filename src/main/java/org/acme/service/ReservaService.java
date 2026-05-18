@@ -77,6 +77,10 @@ public class ReservaService {
             return null;
         }
 
+        if (reserva.getStatus() == StatusReserva.CANCELADA) {
+            throw new BadRequestException("Reserva cancelada nao pode ser atualizada");
+        }
+
         aplicarDados(reserva, request, id);
         return reserva;
     }

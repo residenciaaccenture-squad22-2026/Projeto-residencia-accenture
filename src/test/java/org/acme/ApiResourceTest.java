@@ -1,6 +1,7 @@
 package org.acme;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 import org.acme.model.StatusRecurso;
@@ -9,6 +10,8 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 class ApiResourceTest {
@@ -65,6 +68,30 @@ class ApiResourceTest {
                 .then()
                 .statusCode(400)
                 .body("mensagem", is("Sala indisponivel no periodo informado"));
+    }
+
+    @Test
+    void naoDevePermitirReservaComConflitoDeEquipamento() {
+        Long primeiraSalaId = criarSala(StatusRecurso.DISPONIVEL);
+        Long segundaSalaId = criarSala(StatusRecurso.DISPONIVEL);
+        Long equipamentoId = criarEquipamento(StatusRecurso.DISPONIVEL);
+        LocalDateTime inicio = LocalDateTime.of(2026, 6, 7, 9, 0);
+        LocalDateTime fim = LocalDateTime.of(2026, 6, 7, 10, 0);
+
+        criarReserva(primeiraSalaId, equipamentoId, inicio, fim);
+
+        given()
+                .contentType("application/json")
+                .body(Map.of(
+                        "salaId", segundaSalaId,
+                        "equipamentoId", equipamentoId,
+                        "responsavel", "Joao Santos",
+                        "dataHoraInicio", inicio.plusMinutes(15).toString(),
+                        "dataHoraFim", fim.plusMinutes(15).toString()))
+                .when().post("/reservas")
+                .then()
+                .statusCode(400)
+                .body("mensagem", is("Equipamento indisponivel no periodo informado"));
     }
 
     @Test
@@ -148,6 +175,153 @@ class ApiResourceTest {
                 .statusCode(200)
                 .body("disponivel", is(true))
                 .body("mensagem", is("Sala disponivel"));
+    }
+
+    @Test
+    void deveListarSomenteSalasDisponiveisNoPeriodo() {
+        Long salaLivreId = criarSala(StatusRecurso.DISPONIVEL);
+        Long salaOcupadaId = criarSala(StatusRecurso.DISPONIVEL);
+        Long salaManutencaoId = criarSala(StatusRecurso.MANUTENCAO);
+        LocalDateTime inicio = LocalDateTime.of(2026, 6, 8, 9, 0);
+        LocalDateTime fim = LocalDateTime.of(2026, 6, 8, 10, 0);
+
+        criarReserva(salaOcupadaId, null, inicio, fim);
+
+        List<Integer> ids = given()
+                .queryParam("inicio", inicio.toString())
+                .queryParam("fim", fim.toString())
+                .when().get("/disponibilidade/salas")
+                .then()
+                .statusCode(200)
+                .extract().path("id");
+
+        assertTrue(ids.contains(salaLivreId.intValue()));
+        assertFalse(ids.contains(salaOcupadaId.intValue()));
+        assertFalse(ids.contains(salaManutencaoId.intValue()));
+    }
+
+    @Test
+    void deveListarSomenteEquipamentosDisponiveisNoPeriodo() {
+        Long salaId = criarSala(StatusRecurso.DISPONIVEL);
+        Long equipamentoLivreId = criarEquipamento(StatusRecurso.DISPONIVEL);
+        Long equipamentoOcupadoId = criarEquipamento(StatusRecurso.DISPONIVEL);
+        Long equipamentoManutencaoId = criarEquipamento(StatusRecurso.MANUTENCAO);
+        LocalDateTime inicio = LocalDateTime.of(2026, 6, 9, 9, 0);
+        LocalDateTime fim = LocalDateTime.of(2026, 6, 9, 10, 0);
+
+        criarReserva(salaId, equipamentoOcupadoId, inicio, fim);
+
+        List<Integer> ids = given()
+                .queryParam("inicio", inicio.toString())
+                .queryParam("fim", fim.toString())
+                .when().get("/disponibilidade/equipamentos")
+                .then()
+                .statusCode(200)
+                .extract().path("id");
+
+        assertTrue(ids.contains(equipamentoLivreId.intValue()));
+        assertFalse(ids.contains(equipamentoOcupadoId.intValue()));
+        assertFalse(ids.contains(equipamentoManutencaoId.intValue()));
+    }
+
+    @Test
+    void naoDeveAtualizarReservaCancelada() {
+        Long salaId = criarSala(StatusRecurso.DISPONIVEL);
+        Long reservaId = criarReserva(
+                salaId,
+                null,
+                LocalDateTime.of(2026, 6, 10, 9, 0),
+                LocalDateTime.of(2026, 6, 10, 10, 0));
+
+        given()
+                .when().put("/reservas/{id}/cancelar", reservaId)
+                .then()
+                .statusCode(200);
+
+        given()
+                .contentType("application/json")
+                .body(Map.of(
+                        "salaId", salaId,
+                        "responsavel", "Reserva Editada",
+                        "dataHoraInicio", "2026-06-10T11:00:00",
+                        "dataHoraFim", "2026-06-10T12:00:00"))
+                .when().put("/reservas/{id}", reservaId)
+                .then()
+                .statusCode(400)
+                .body("mensagem", is("Reserva cancelada nao pode ser atualizada"));
+    }
+
+    @Test
+    void naoDeveAtualizarReservaGerandoConflitoDeSala() {
+        Long salaOriginalId = criarSala(StatusRecurso.DISPONIVEL);
+        Long salaOcupadaId = criarSala(StatusRecurso.DISPONIVEL);
+        LocalDateTime inicio = LocalDateTime.of(2026, 6, 11, 9, 0);
+        LocalDateTime fim = LocalDateTime.of(2026, 6, 11, 10, 0);
+
+        criarReserva(salaOcupadaId, null, inicio, fim);
+        Long reservaId = criarReserva(salaOriginalId, null, inicio.plusHours(2), fim.plusHours(2));
+
+        given()
+                .contentType("application/json")
+                .body(Map.of(
+                        "salaId", salaOcupadaId,
+                        "responsavel", "Reserva Conflitante",
+                        "dataHoraInicio", inicio.plusMinutes(30).toString(),
+                        "dataHoraFim", fim.plusMinutes(30).toString()))
+                .when().put("/reservas/{id}", reservaId)
+                .then()
+                .statusCode(400)
+                .body("mensagem", is("Sala indisponivel no periodo informado"));
+    }
+
+    @Test
+    void naoDeveRemoverSalaComReservaVinculada() {
+        Long salaId = criarSala(StatusRecurso.DISPONIVEL);
+        criarReserva(
+                salaId,
+                null,
+                LocalDateTime.of(2026, 6, 12, 9, 0),
+                LocalDateTime.of(2026, 6, 12, 10, 0));
+
+        given()
+                .when().delete("/salas/{id}", salaId)
+                .then()
+                .statusCode(409)
+                .body("mensagem", is("Sala possui reservas vinculadas"));
+    }
+
+    @Test
+    void naoDeveRemoverEquipamentoComReservaVinculada() {
+        Long salaId = criarSala(StatusRecurso.DISPONIVEL);
+        Long equipamentoId = criarEquipamento(StatusRecurso.DISPONIVEL);
+        criarReserva(
+                salaId,
+                equipamentoId,
+                LocalDateTime.of(2026, 6, 13, 9, 0),
+                LocalDateTime.of(2026, 6, 13, 10, 0));
+
+        given()
+                .when().delete("/equipamentos/{id}", equipamentoId)
+                .then()
+                .statusCode(409)
+                .body("mensagem", is("Equipamento possui reservas vinculadas"));
+    }
+
+    @Test
+    void naoDeveAceitarStatusInvalidoNoCadastroDeSala() {
+        given()
+                .contentType("application/json")
+                .body("""
+                        {
+                          "nome": "Sala status invalido",
+                          "capacidade": 8,
+                          "localizacao": "Bloco A",
+                          "status": "BLOQUEADA"
+                        }
+                        """)
+                .when().post("/salas")
+                .then()
+                .statusCode(400);
     }
 
     @Test

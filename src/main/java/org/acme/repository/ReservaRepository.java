@@ -18,6 +18,14 @@ public class ReservaRepository implements PanacheRepository<Reserva> {
         return list("sala.id", salaId);
     }
 
+    public boolean existeReservaParaSala(Long salaId) {
+        return count("sala.id", salaId) > 0;
+    }
+
+    public boolean existeReservaParaEquipamento(Long equipamentoId) {
+        return count("equipamento.id", equipamentoId) > 0;
+    }
+
     public boolean existeConflitoSala(Long salaId, LocalDateTime inicio, LocalDateTime fim, Long reservaIgnoradaId) {
         Map<String, Object> params = new HashMap<>();
         params.put("salaId", salaId);

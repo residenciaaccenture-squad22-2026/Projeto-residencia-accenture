@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.acme.model.Sala;
 import org.acme.model.StatusRecurso;
+import org.acme.repository.ReservaRepository;
 import org.acme.repository.SalaRepository;
 
 import io.quarkus.cache.CacheInvalidateAll;
@@ -11,12 +12,17 @@ import io.quarkus.cache.CacheResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 
 @ApplicationScoped
 public class SalaService {
 
     @Inject
     SalaRepository salaRepository;
+
+    @Inject
+    ReservaRepository reservaRepository;
 
     @CacheResult(cacheName = "salas")
     public List<Sala> listarSalas() {
@@ -55,6 +61,10 @@ public class SalaService {
     @Transactional
     @CacheInvalidateAll(cacheName = "salas")
     public boolean removerSala(Long id) {
+        if (reservaRepository.existeReservaParaSala(id)) {
+            throw new WebApplicationException("Sala possui reservas vinculadas", Response.Status.CONFLICT);
+        }
+
         return salaRepository.deleteById(id);
     }
 

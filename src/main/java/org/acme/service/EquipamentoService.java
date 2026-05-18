@@ -5,18 +5,24 @@ import java.util.List;
 import org.acme.model.Equipamento;
 import org.acme.model.StatusRecurso;
 import org.acme.repository.EquipamentoRepository;
+import org.acme.repository.ReservaRepository;
 
 import io.quarkus.cache.CacheInvalidateAll;
 import io.quarkus.cache.CacheResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 
 @ApplicationScoped
 public class EquipamentoService {
 
     @Inject
     EquipamentoRepository equipamentoRepository;
+
+    @Inject
+    ReservaRepository reservaRepository;
 
     @CacheResult(cacheName = "equipamentos")
     public List<Equipamento> listarEquipamentos() {
@@ -56,6 +62,10 @@ public class EquipamentoService {
     @Transactional
     @CacheInvalidateAll(cacheName = "equipamentos")
     public boolean removerEquipamento(Long id) {
+        if (reservaRepository.existeReservaParaEquipamento(id)) {
+            throw new WebApplicationException("Equipamento possui reservas vinculadas", Response.Status.CONFLICT);
+        }
+
         return equipamentoRepository.deleteById(id);
     }
 
