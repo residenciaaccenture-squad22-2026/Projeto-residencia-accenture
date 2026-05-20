@@ -8,6 +8,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -26,6 +28,10 @@ public class Equipamento extends PanacheEntityBase {
 
     @Column(name = "tipo", nullable = false)
     private String tipo;
+
+    @ManyToOne
+    @JoinColumn(name = "sala_id", nullable = false)
+    private Sala sala;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
@@ -72,6 +78,14 @@ public class Equipamento extends PanacheEntityBase {
 
     public void setTipo(String tipo) {
         this.tipo = tipo;
+    }
+
+    public Sala getSala() {
+        return sala;
+    }
+
+    public void setSala(Sala sala) {
+        this.sala = sala;
     }
 
     public StatusRecurso getStatus() {

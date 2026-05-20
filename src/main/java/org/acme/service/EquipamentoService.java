@@ -3,17 +3,17 @@ package org.acme.service;
 import java.util.List;
 
 import org.acme.model.Equipamento;
+import org.acme.model.Sala;
 import org.acme.model.StatusRecurso;
 import org.acme.repository.EquipamentoRepository;
-import org.acme.repository.ReservaRepository;
+import org.acme.repository.SalaRepository;
 
 import io.quarkus.cache.CacheInvalidateAll;
 import io.quarkus.cache.CacheResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.NotFoundException;
 
 @ApplicationScoped
 public class EquipamentoService {
@@ -22,11 +22,15 @@ public class EquipamentoService {
     EquipamentoRepository equipamentoRepository;
 
     @Inject
-    ReservaRepository reservaRepository;
+    SalaRepository salaRepository;
 
     @CacheResult(cacheName = "equipamentos")
     public List<Equipamento> listarEquipamentos() {
         return equipamentoRepository.listAll();
+    }
+
+    public List<Equipamento> listarPorSala(Long salaId) {
+        return equipamentoRepository.listarPorSala(salaId);
     }
 
     public Equipamento buscarPorId(Long id) {
@@ -35,7 +39,9 @@ public class EquipamentoService {
 
     @Transactional
     @CacheInvalidateAll(cacheName = "equipamentos")
-    public Equipamento cadastrarEquipamento(Equipamento equipamento) {
+    @CacheInvalidateAll(cacheName = "salas")
+    public Equipamento cadastrarEquipamento(Equipamento equipamento, Long salaId) {
+        equipamento.setSala(buscarSalaObrigatoria(salaId));
         preencherStatusPadrao(equipamento);
         equipamentoRepository.persist(equipamento);
         return equipamento;
@@ -43,13 +49,15 @@ public class EquipamentoService {
 
     @Transactional
     @CacheInvalidateAll(cacheName = "equipamentos")
-    public Equipamento atualizarEquipamento(Long id, Equipamento dadosAtualizados) {
+    @CacheInvalidateAll(cacheName = "salas")
+    public Equipamento atualizarEquipamento(Long id, Equipamento dadosAtualizados, Long salaId) {
         Equipamento equipamento = equipamentoRepository.findById(id);
 
         if (equipamento == null) {
             return null;
         }
 
+        equipamento.setSala(buscarSalaObrigatoria(salaId));
         equipamento.setNome(dadosAtualizados.getNome());
         equipamento.setDescricao(dadosAtualizados.getDescricao());
         equipamento.setTipo(dadosAtualizados.getTipo());
@@ -61,11 +69,8 @@ public class EquipamentoService {
 
     @Transactional
     @CacheInvalidateAll(cacheName = "equipamentos")
+    @CacheInvalidateAll(cacheName = "salas")
     public boolean removerEquipamento(Long id) {
-        if (reservaRepository.existeReservaParaEquipamento(id)) {
-            throw new WebApplicationException("Equipamento possui reservas vinculadas", Response.Status.CONFLICT);
-        }
-
         return equipamentoRepository.deleteById(id);
     }
 
@@ -73,5 +78,13 @@ public class EquipamentoService {
         if (equipamento.getStatus() == null) {
             equipamento.setStatus(StatusRecurso.DISPONIVEL);
         }
+    }
+
+    private Sala buscarSalaObrigatoria(Long salaId) {
+        Sala sala = salaRepository.findById(salaId);
+        if (sala == null) {
+            throw new NotFoundException("Sala nao encontrada");
+        }
+        return sala;
     }
 }

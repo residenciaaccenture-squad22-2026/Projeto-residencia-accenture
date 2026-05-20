@@ -22,10 +22,6 @@ public class ReservaRepository implements PanacheRepository<Reserva> {
         return count("sala.id", salaId) > 0;
     }
 
-    public boolean existeReservaParaEquipamento(Long equipamentoId) {
-        return count("equipamento.id", equipamentoId) > 0;
-    }
-
     public boolean existeConflitoSala(Long salaId, LocalDateTime inicio, LocalDateTime fim, Long reservaIgnoradaId) {
         Map<String, Object> params = new HashMap<>();
         params.put("salaId", salaId);
@@ -48,26 +44,4 @@ public class ReservaRepository implements PanacheRepository<Reserva> {
                 """.formatted(filtroReservaIgnorada), params) > 0;
     }
 
-    public boolean existeConflitoEquipamento(Long equipamentoId, LocalDateTime inicio, LocalDateTime fim,
-            Long reservaIgnoradaId) {
-        Map<String, Object> params = new HashMap<>();
-        params.put("equipamentoId", equipamentoId);
-        params.put("inicio", inicio);
-        params.put("fim", fim);
-        params.put("status", StatusReserva.ATIVA);
-
-        String filtroReservaIgnorada = "";
-        if (reservaIgnoradaId != null) {
-            params.put("reservaIgnoradaId", reservaIgnoradaId);
-            filtroReservaIgnorada = "and id <> :reservaIgnoradaId";
-        }
-
-        return count("""
-                equipamento.id = :equipamentoId
-                and status = :status
-                and dataHoraInicio < :fim
-                and dataHoraFim > :inicio
-                %s
-                """.formatted(filtroReservaIgnorada), params) > 0;
-    }
 }

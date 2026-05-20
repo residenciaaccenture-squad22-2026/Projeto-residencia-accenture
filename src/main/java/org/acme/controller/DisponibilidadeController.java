@@ -2,7 +2,6 @@ package org.acme.controller;
 
 import java.util.List;
 
-import org.acme.dto.EquipamentoResponse;
 import org.acme.dto.SalaResponse;
 import org.acme.service.DisponibilidadeService;
 import org.acme.util.DataHoraUtil;
@@ -33,15 +32,4 @@ public class DisponibilidadeController {
                 .toList();
     }
 
-    @GET
-    @Path("/equipamentos")
-    public List<EquipamentoResponse> listarEquipamentosDisponiveis(
-            @QueryParam("inicio") String inicio,
-            @QueryParam("fim") String fim) {
-        return disponibilidadeService.listarEquipamentosDisponiveis(
-                DataHoraUtil.converter(inicio),
-                DataHoraUtil.converter(fim)).stream()
-                .map(EquipamentoResponse::from)
-                .toList();
-    }
 }

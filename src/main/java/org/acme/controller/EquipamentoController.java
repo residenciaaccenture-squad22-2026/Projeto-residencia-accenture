@@ -20,6 +20,7 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -32,7 +33,13 @@ public class EquipamentoController {
     EquipamentoService equipamentoService;
 
     @GET
-    public List<EquipamentoResponse> listarEquipamentos() {
+    public List<EquipamentoResponse> listarEquipamentos(@QueryParam("salaId") Long salaId) {
+        if (salaId != null) {
+            return equipamentoService.listarPorSala(salaId).stream()
+                    .map(EquipamentoResponse::from)
+                    .toList();
+        }
+
         return equipamentoService.listarEquipamentos().stream()
                 .map(EquipamentoResponse::from)
                 .toList();
@@ -52,7 +59,9 @@ public class EquipamentoController {
 
     @POST
     public Response cadastrarEquipamento(@Valid EquipamentoRequest request) {
-        Equipamento equipamentoCadastrado = equipamentoService.cadastrarEquipamento(ApiMapper.toEquipamento(request));
+        Equipamento equipamentoCadastrado = equipamentoService.cadastrarEquipamento(
+                ApiMapper.toEquipamento(request),
+                request.getSalaId());
 
         return Response
                 .created(URI.create("/equipamentos/" + equipamentoCadastrado.getId()))
@@ -63,7 +72,10 @@ public class EquipamentoController {
     @PUT
     @Path("/{id}")
     public EquipamentoResponse atualizarEquipamento(@PathParam("id") Long id, @Valid EquipamentoRequest request) {
-        Equipamento equipamentoAtualizado = equipamentoService.atualizarEquipamento(id, ApiMapper.toEquipamento(request));
+        Equipamento equipamentoAtualizado = equipamentoService.atualizarEquipamento(
+                id,
+                ApiMapper.toEquipamento(request),
+                request.getSalaId());
 
         if (equipamentoAtualizado == null) {
             throw new NotFoundException("Equipamento nao encontrado");

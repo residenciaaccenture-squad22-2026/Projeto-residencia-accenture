@@ -1,13 +1,19 @@
 package org.acme.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -30,6 +36,9 @@ public class Sala extends PanacheEntityBase {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private StatusRecurso status = StatusRecurso.DISPONIVEL;
+
+    @OneToMany(mappedBy = "sala", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<Equipamento> equipamentos = new ArrayList<>();
 
     public Sala() {
     }
@@ -80,5 +89,13 @@ public class Sala extends PanacheEntityBase {
 
     public void setStatus(StatusRecurso status) {
         this.status = status;
+    }
+
+    public List<Equipamento> getEquipamentos() {
+        return equipamentos;
+    }
+
+    public void setEquipamentos(List<Equipamento> equipamentos) {
+        this.equipamentos = equipamentos;
     }
 }

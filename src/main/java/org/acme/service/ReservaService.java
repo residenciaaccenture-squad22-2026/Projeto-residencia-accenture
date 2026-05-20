@@ -4,12 +4,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.acme.dto.ReservaRequest;
-import org.acme.model.Equipamento;
 import org.acme.model.Reserva;
 import org.acme.model.Sala;
 import org.acme.model.StatusRecurso;
 import org.acme.model.StatusReserva;
-import org.acme.repository.EquipamentoRepository;
 import org.acme.repository.ReservaRepository;
 import org.acme.repository.SalaRepository;
 
@@ -27,9 +25,6 @@ public class ReservaService {
 
     @Inject
     SalaRepository salaRepository;
-
-    @Inject
-    EquipamentoRepository equipamentoRepository;
 
     public List<Reserva> listarReservas() {
         return reservaRepository.listAll();
@@ -50,15 +45,6 @@ public class ReservaService {
             return false;
         }
         return !reservaRepository.existeConflitoSala(salaId, inicio, fim, null);
-    }
-
-    public boolean equipamentoDisponivel(Long equipamentoId, LocalDateTime inicio, LocalDateTime fim) {
-        validarPeriodo(inicio, fim);
-        Equipamento equipamento = buscarEquipamentoObrigatorio(equipamentoId);
-        if (equipamento.getStatus() != StatusRecurso.DISPONIVEL) {
-            return false;
-        }
-        return !reservaRepository.existeConflitoEquipamento(equipamentoId, inicio, fim, null);
     }
 
     @Transactional
@@ -110,18 +96,9 @@ public class ReservaService {
             throw new BadRequestException("Sala indisponivel no periodo informado");
         }
 
-        Equipamento equipamento = null;
-        if (request.getEquipamentoId() != null) {
-            equipamento = buscarEquipamentoObrigatorio(request.getEquipamentoId());
-            if (equipamento.getStatus() != StatusRecurso.DISPONIVEL) {
-                throw new BadRequestException("Equipamento indisponivel no periodo informado");
-            }
-        }
-
         validarConflitos(request, reservaIgnoradaId);
 
         reserva.setSala(sala);
-        reserva.setEquipamento(equipamento);
         reserva.setResponsavel(request.getResponsavel());
         reserva.setDataHoraInicio(request.getDataHoraInicio());
         reserva.setDataHoraFim(request.getDataHoraFim());
@@ -168,19 +145,6 @@ public class ReservaService {
             throw new BadRequestException("Sala indisponivel no periodo informado");
         }
 
-        if (request.getEquipamentoId() == null) {
-            return;
-        }
-
-        boolean equipamentoOcupado = reservaRepository.existeConflitoEquipamento(
-                request.getEquipamentoId(),
-                request.getDataHoraInicio(),
-                request.getDataHoraFim(),
-                reservaIgnoradaId);
-
-        if (equipamentoOcupado) {
-            throw new BadRequestException("Equipamento indisponivel no periodo informado");
-        }
     }
 
     private Sala buscarSalaObrigatoria(Long salaId) {
@@ -191,11 +155,4 @@ public class ReservaService {
         return sala;
     }
 
-    private Equipamento buscarEquipamentoObrigatorio(Long equipamentoId) {
-        Equipamento equipamento = equipamentoRepository.findById(equipamentoId);
-        if (equipamento == null) {
-            throw new NotFoundException("Equipamento nao encontrado");
-        }
-        return equipamento;
-    }
 }

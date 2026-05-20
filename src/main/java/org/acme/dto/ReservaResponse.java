@@ -9,7 +9,6 @@ public class ReservaResponse {
 
     private Long id;
     private SalaResponse sala;
-    private EquipamentoResponse equipamento;
     private String responsavel;
     private LocalDateTime dataHoraInicio;
     private LocalDateTime dataHoraFim;
@@ -18,11 +17,10 @@ public class ReservaResponse {
     public ReservaResponse() {
     }
 
-    public ReservaResponse(Long id, SalaResponse sala, EquipamentoResponse equipamento, String responsavel,
+    public ReservaResponse(Long id, SalaResponse sala, String responsavel,
             LocalDateTime dataHoraInicio, LocalDateTime dataHoraFim, StatusReserva status) {
         this.id = id;
         this.sala = sala;
-        this.equipamento = equipamento;
         this.responsavel = responsavel;
         this.dataHoraInicio = dataHoraInicio;
         this.dataHoraFim = dataHoraFim;
@@ -30,14 +28,9 @@ public class ReservaResponse {
     }
 
     public static ReservaResponse from(Reserva reserva) {
-        EquipamentoResponse equipamento = reserva.getEquipamento() == null
-                ? null
-                : EquipamentoResponse.from(reserva.getEquipamento());
-
         return new ReservaResponse(
                 reserva.getId(),
                 SalaResponse.from(reserva.getSala()),
-                equipamento,
                 reserva.getResponsavel(),
                 reserva.getDataHoraInicio(),
                 reserva.getDataHoraFim(),
@@ -58,14 +51,6 @@ public class ReservaResponse {
 
     public void setSala(SalaResponse sala) {
         this.sala = sala;
-    }
-
-    public EquipamentoResponse getEquipamento() {
-        return equipamento;
-    }
-
-    public void setEquipamento(EquipamentoResponse equipamento) {
-        this.equipamento = equipamento;
     }
 
     public String getResponsavel() {

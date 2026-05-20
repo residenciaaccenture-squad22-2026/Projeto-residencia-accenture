@@ -71,21 +71,6 @@ public class ReservaController {
         return new DisponibilidadeResponse(disponivel, mensagem);
     }
 
-    @GET
-    @Path("/disponibilidade/equipamento/{equipamentoId}")
-    public DisponibilidadeResponse consultarDisponibilidadeEquipamento(
-            @PathParam("equipamentoId") Long equipamentoId,
-            @QueryParam("inicio") String inicio,
-            @QueryParam("fim") String fim) {
-        boolean disponivel = reservaService.equipamentoDisponivel(
-                equipamentoId,
-                DataHoraUtil.converter(inicio),
-                DataHoraUtil.converter(fim));
-        String mensagem = disponivel ? "Equipamento disponivel" : "Equipamento indisponivel no periodo informado";
-
-        return new DisponibilidadeResponse(disponivel, mensagem);
-    }
-
     @POST
     public Response criarReserva(@Valid ReservaRequest request) {
         Reserva reserva = reservaService.criarReserva(request);

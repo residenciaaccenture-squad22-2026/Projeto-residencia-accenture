@@ -9,7 +9,6 @@ public class ReservaRequest {
 
     @NotNull(message = "Sala e obrigatoria")
     private Long salaId;
-    private Long equipamentoId;
 
     @NotBlank(message = "Responsavel e obrigatorio")
     private String responsavel;
@@ -26,14 +25,6 @@ public class ReservaRequest {
 
     public void setSalaId(Long salaId) {
         this.salaId = salaId;
-    }
-
-    public Long getEquipamentoId() {
-        return equipamentoId;
-    }
-
-    public void setEquipamentoId(Long equipamentoId) {
-        this.equipamentoId = equipamentoId;
     }
 
     public String getResponsavel() {

@@ -26,9 +26,9 @@ class ApiResourceTest {
     }
 
     @Test
-    void deveCriarReservaQuandoSalaEEquipamentoEstaoDisponiveis() {
+    void deveCriarReservaQuandoSalaEstaDisponivelComEquipamentos() {
         Long salaId = criarSala(StatusRecurso.DISPONIVEL);
-        Long equipamentoId = criarEquipamento(StatusRecurso.DISPONIVEL);
+        Long equipamentoId = criarEquipamento(salaId, StatusRecurso.DISPONIVEL);
         LocalDateTime inicio = LocalDateTime.of(2026, 6, 1, 9, 0);
         LocalDateTime fim = LocalDateTime.of(2026, 6, 1, 10, 0);
 
@@ -36,7 +36,6 @@ class ApiResourceTest {
                 .contentType("application/json")
                 .body(Map.of(
                         "salaId", salaId,
-                        "equipamentoId", equipamentoId,
                         "responsavel", "Maria Silva",
                         "dataHoraInicio", inicio.toString(),
                         "dataHoraFim", fim.toString()))
@@ -44,7 +43,7 @@ class ApiResourceTest {
                 .then()
                 .statusCode(201)
                 .body("sala.id", is(salaId.intValue()))
-                .body("equipamento.id", is(equipamentoId.intValue()))
+                .body("sala.equipamentos[0].id", is(equipamentoId.intValue()))
                 .body("responsavel", is("Maria Silva"))
                 .body("status", is("ATIVA"));
     }
@@ -55,7 +54,7 @@ class ApiResourceTest {
         LocalDateTime inicio = LocalDateTime.of(2026, 6, 2, 14, 0);
         LocalDateTime fim = LocalDateTime.of(2026, 6, 2, 15, 0);
 
-        criarReserva(salaId, null, inicio, fim);
+        criarReserva(salaId, inicio, fim);
 
         given()
                 .contentType("application/json")
@@ -68,30 +67,6 @@ class ApiResourceTest {
                 .then()
                 .statusCode(400)
                 .body("mensagem", is("Sala indisponivel no periodo informado"));
-    }
-
-    @Test
-    void naoDevePermitirReservaComConflitoDeEquipamento() {
-        Long primeiraSalaId = criarSala(StatusRecurso.DISPONIVEL);
-        Long segundaSalaId = criarSala(StatusRecurso.DISPONIVEL);
-        Long equipamentoId = criarEquipamento(StatusRecurso.DISPONIVEL);
-        LocalDateTime inicio = LocalDateTime.of(2026, 6, 7, 9, 0);
-        LocalDateTime fim = LocalDateTime.of(2026, 6, 7, 10, 0);
-
-        criarReserva(primeiraSalaId, equipamentoId, inicio, fim);
-
-        given()
-                .contentType("application/json")
-                .body(Map.of(
-                        "salaId", segundaSalaId,
-                        "equipamentoId", equipamentoId,
-                        "responsavel", "Joao Santos",
-                        "dataHoraInicio", inicio.plusMinutes(15).toString(),
-                        "dataHoraFim", fim.plusMinutes(15).toString()))
-                .when().post("/reservas")
-                .then()
-                .statusCode(400)
-                .body("mensagem", is("Equipamento indisponivel no periodo informado"));
     }
 
     @Test
@@ -124,9 +99,12 @@ class ApiResourceTest {
 
     @Test
     void naoDeveCadastrarEquipamentoSemTipo() {
+        Long salaId = criarSala(StatusRecurso.DISPONIVEL);
+
         given()
                 .contentType("application/json")
                 .body(Map.of(
+                        "salaId", salaId,
                         "nome", "Projetor sem tipo",
                         "descricao", "Cadastro incompleto",
                         "status", StatusRecurso.DISPONIVEL.name()))
@@ -159,7 +137,7 @@ class ApiResourceTest {
         LocalDateTime inicio = LocalDateTime.of(2026, 6, 5, 9, 0);
         LocalDateTime fim = LocalDateTime.of(2026, 6, 5, 10, 0);
 
-        Long reservaId = criarReserva(salaId, null, inicio, fim);
+        Long reservaId = criarReserva(salaId, inicio, fim);
 
         given()
                 .when().put("/reservas/{id}/cancelar", reservaId)
@@ -185,7 +163,7 @@ class ApiResourceTest {
         LocalDateTime inicio = LocalDateTime.of(2026, 6, 8, 9, 0);
         LocalDateTime fim = LocalDateTime.of(2026, 6, 8, 10, 0);
 
-        criarReserva(salaOcupadaId, null, inicio, fim);
+        criarReserva(salaOcupadaId, inicio, fim);
 
         List<Integer> ids = given()
                 .queryParam("inicio", inicio.toString())
@@ -201,27 +179,21 @@ class ApiResourceTest {
     }
 
     @Test
-    void deveListarSomenteEquipamentosDisponiveisNoPeriodo() {
+    void deveListarEquipamentosDentroDaSala() {
         Long salaId = criarSala(StatusRecurso.DISPONIVEL);
-        Long equipamentoLivreId = criarEquipamento(StatusRecurso.DISPONIVEL);
-        Long equipamentoOcupadoId = criarEquipamento(StatusRecurso.DISPONIVEL);
-        Long equipamentoManutencaoId = criarEquipamento(StatusRecurso.MANUTENCAO);
-        LocalDateTime inicio = LocalDateTime.of(2026, 6, 9, 9, 0);
-        LocalDateTime fim = LocalDateTime.of(2026, 6, 9, 10, 0);
-
-        criarReserva(salaId, equipamentoOcupadoId, inicio, fim);
+        Long outraSalaId = criarSala(StatusRecurso.DISPONIVEL);
+        Long equipamentoDaSalaId = criarEquipamento(salaId, StatusRecurso.DISPONIVEL);
+        Long equipamentoDeOutraSalaId = criarEquipamento(outraSalaId, StatusRecurso.DISPONIVEL);
 
         List<Integer> ids = given()
-                .queryParam("inicio", inicio.toString())
-                .queryParam("fim", fim.toString())
-                .when().get("/disponibilidade/equipamentos")
+                .queryParam("salaId", salaId)
+                .when().get("/equipamentos")
                 .then()
                 .statusCode(200)
                 .extract().path("id");
 
-        assertTrue(ids.contains(equipamentoLivreId.intValue()));
-        assertFalse(ids.contains(equipamentoOcupadoId.intValue()));
-        assertFalse(ids.contains(equipamentoManutencaoId.intValue()));
+        assertTrue(ids.contains(equipamentoDaSalaId.intValue()));
+        assertFalse(ids.contains(equipamentoDeOutraSalaId.intValue()));
     }
 
     @Test
@@ -229,7 +201,6 @@ class ApiResourceTest {
         Long salaId = criarSala(StatusRecurso.DISPONIVEL);
         Long reservaId = criarReserva(
                 salaId,
-                null,
                 LocalDateTime.of(2026, 6, 10, 9, 0),
                 LocalDateTime.of(2026, 6, 10, 10, 0));
 
@@ -258,8 +229,8 @@ class ApiResourceTest {
         LocalDateTime inicio = LocalDateTime.of(2026, 6, 11, 9, 0);
         LocalDateTime fim = LocalDateTime.of(2026, 6, 11, 10, 0);
 
-        criarReserva(salaOcupadaId, null, inicio, fim);
-        Long reservaId = criarReserva(salaOriginalId, null, inicio.plusHours(2), fim.plusHours(2));
+        criarReserva(salaOcupadaId, inicio, fim);
+        Long reservaId = criarReserva(salaOriginalId, inicio.plusHours(2), fim.plusHours(2));
 
         given()
                 .contentType("application/json")
@@ -279,7 +250,6 @@ class ApiResourceTest {
         Long salaId = criarSala(StatusRecurso.DISPONIVEL);
         criarReserva(
                 salaId,
-                null,
                 LocalDateTime.of(2026, 6, 12, 9, 0),
                 LocalDateTime.of(2026, 6, 12, 10, 0));
 
@@ -288,23 +258,6 @@ class ApiResourceTest {
                 .then()
                 .statusCode(409)
                 .body("mensagem", is("Sala possui reservas vinculadas"));
-    }
-
-    @Test
-    void naoDeveRemoverEquipamentoComReservaVinculada() {
-        Long salaId = criarSala(StatusRecurso.DISPONIVEL);
-        Long equipamentoId = criarEquipamento(StatusRecurso.DISPONIVEL);
-        criarReserva(
-                salaId,
-                equipamentoId,
-                LocalDateTime.of(2026, 6, 13, 9, 0),
-                LocalDateTime.of(2026, 6, 13, 10, 0));
-
-        given()
-                .when().delete("/equipamentos/{id}", equipamentoId)
-                .then()
-                .statusCode(409)
-                .body("mensagem", is("Equipamento possui reservas vinculadas"));
     }
 
     @Test
@@ -368,10 +321,11 @@ class ApiResourceTest {
         return id.longValue();
     }
 
-    private Long criarEquipamento(StatusRecurso status) {
+    private Long criarEquipamento(Long salaId, StatusRecurso status) {
         Number id = given()
                 .contentType("application/json")
                 .body(Map.of(
+                        "salaId", salaId,
                         "nome", "Projetor " + System.nanoTime(),
                         "descricao", "Projetor HDMI",
                         "tipo", "VIDEO",
@@ -384,15 +338,12 @@ class ApiResourceTest {
         return id.longValue();
     }
 
-    private Long criarReserva(Long salaId, Long equipamentoId, LocalDateTime inicio, LocalDateTime fim) {
+    private Long criarReserva(Long salaId, LocalDateTime inicio, LocalDateTime fim) {
         Map<String, Object> body = new java.util.HashMap<>();
         body.put("salaId", salaId);
         body.put("responsavel", "Ana Costa");
         body.put("dataHoraInicio", inicio.toString());
         body.put("dataHoraFim", fim.toString());
-        if (equipamentoId != null) {
-            body.put("equipamentoId", equipamentoId);
-        }
 
         Number id = given()
                 .contentType("application/json")

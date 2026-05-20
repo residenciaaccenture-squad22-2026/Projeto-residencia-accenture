@@ -3,9 +3,7 @@ package org.acme.service;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.acme.model.Equipamento;
 import org.acme.model.Sala;
-import org.acme.repository.EquipamentoRepository;
 import org.acme.repository.SalaRepository;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -18,17 +16,9 @@ public class DisponibilidadeService {
     @Inject
     SalaRepository salaRepository;
 
-    @Inject
-    EquipamentoRepository equipamentoRepository;
-
     public List<Sala> listarSalasDisponiveis(LocalDateTime inicio, LocalDateTime fim) {
         validarPeriodo(inicio, fim);
         return salaRepository.listarDisponiveis(inicio, fim);
-    }
-
-    public List<Equipamento> listarEquipamentosDisponiveis(LocalDateTime inicio, LocalDateTime fim) {
-        validarPeriodo(inicio, fim);
-        return equipamentoRepository.listarDisponiveis(inicio, fim);
     }
 
     private void validarPeriodo(LocalDateTime inicio, LocalDateTime fim) {

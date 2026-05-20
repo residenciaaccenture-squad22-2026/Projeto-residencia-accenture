@@ -1,5 +1,7 @@
 package org.acme.dto;
 
+import java.util.List;
+
 import org.acme.model.Sala;
 import org.acme.model.StatusRecurso;
 
@@ -10,16 +12,19 @@ public class SalaResponse {
     private int capacidade;
     private String localizacao;
     private StatusRecurso status;
+    private List<EquipamentoResponse> equipamentos;
 
     public SalaResponse() {
     }
 
-    public SalaResponse(Long id, String nome, int capacidade, String localizacao, StatusRecurso status) {
+    public SalaResponse(Long id, String nome, int capacidade, String localizacao, StatusRecurso status,
+            List<EquipamentoResponse> equipamentos) {
         this.id = id;
         this.nome = nome;
         this.capacidade = capacidade;
         this.localizacao = localizacao;
         this.status = status;
+        this.equipamentos = equipamentos;
     }
 
     public static SalaResponse from(Sala sala) {
@@ -28,7 +33,10 @@ public class SalaResponse {
                 sala.getNome(),
                 sala.getCapacidade(),
                 sala.getLocalizacao(),
-                sala.getStatus());
+                sala.getStatus(),
+                sala.getEquipamentos().stream()
+                        .map(EquipamentoResponse::from)
+                        .toList());
     }
 
     public Long getId() {
@@ -69,5 +77,13 @@ public class SalaResponse {
 
     public void setStatus(StatusRecurso status) {
         this.status = status;
+    }
+
+    public List<EquipamentoResponse> getEquipamentos() {
+        return equipamentos;
+    }
+
+    public void setEquipamentos(List<EquipamentoResponse> equipamentos) {
+        this.equipamentos = equipamentos;
     }
 }

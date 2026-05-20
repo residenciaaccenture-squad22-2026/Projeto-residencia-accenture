@@ -27,10 +27,6 @@ public class Reserva extends PanacheEntityBase {
     @JoinColumn(name = "sala_id", nullable = false)
     private Sala sala;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "equipamento_id")
-    private Equipamento equipamento;
-
     @Column(name = "responsavel", nullable = false)
     private String responsavel;
 
@@ -58,14 +54,6 @@ public class Reserva extends PanacheEntityBase {
 
     public void setSala(Sala sala) {
         this.sala = sala;
-    }
-
-    public Equipamento getEquipamento() {
-        return equipamento;
-    }
-
-    public void setEquipamento(Equipamento equipamento) {
-        this.equipamento = equipamento;
     }
 
     public String getResponsavel() {

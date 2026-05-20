@@ -3,8 +3,12 @@ package org.acme.dto;
 import org.acme.model.StatusRecurso;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public class EquipamentoRequest {
+
+    @NotNull(message = "Sala do equipamento e obrigatoria")
+    private Long salaId;
 
     @NotBlank(message = "Nome do equipamento e obrigatorio")
     private String nome;
@@ -15,6 +19,14 @@ public class EquipamentoRequest {
     private String tipo;
 
     private StatusRecurso status;
+
+    public Long getSalaId() {
+        return salaId;
+    }
+
+    public void setSalaId(Long salaId) {
+        this.salaId = salaId;
+    }
 
     public String getNome() {
         return nome;
