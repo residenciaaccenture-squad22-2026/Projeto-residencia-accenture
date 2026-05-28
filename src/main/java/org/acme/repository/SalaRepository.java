@@ -1,19 +1,28 @@
 package org.acme.repository;
 
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.acme.model.Sala;
+import org.acme.model.StatusRecurso;
+import org.acme.model.StatusReserva;
 
-public class SalaRepository {
+import io.quarkus.hibernate.orm.panache.PanacheRepository;
+import jakarta.enterprise.context.ApplicationScoped;
 
-    private static final List<Sala> salas = new ArrayList<>();
+@ApplicationScoped
+public class SalaRepository implements PanacheRepository<Sala> {
 
-    public List<Sala> listarTodas() {
-        return salas;
-    }
-
-    public void salvar(Sala sala) {
-        salas.add(sala);
+    public List<Sala> listarDisponiveis(LocalDateTime inicio, LocalDateTime fim) {
+        return list("""
+                status = ?4
+                and id not in (
+                    select reserva.sala.id
+                    from Reserva reserva
+                    where reserva.status = ?1
+                    and reserva.dataHoraInicio < ?3
+                    and reserva.dataHoraFim > ?2
+                )
+                """, StatusReserva.ATIVA, inicio, fim, StatusRecurso.DISPONIVEL);
     }
 }
