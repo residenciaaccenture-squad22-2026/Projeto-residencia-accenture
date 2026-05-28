@@ -1,9 +1,9 @@
 package org.acme.controller;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.acme.model.Sala;
+import org.acme.service.SalaService;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -17,22 +17,16 @@ import jakarta.ws.rs.core.MediaType;
 @Consumes(MediaType.APPLICATION_JSON)
 public class SalaController {
 
-    private static final List<Sala> salas = new ArrayList<>();
-
-    static {
-        salas.add(new Sala(1L, "Sala Reunião 01", 10, "Bloco A", "Disponível"));
-        salas.add(new Sala(2L, "Sala Treinamento", 25, "Bloco B", "Disponível"));
-    }
+    private final SalaService salaService = new SalaService();
 
     @GET
     public List<Sala> listarSalas() {
-        return salas;
+        return salaService.listarSalas();
     }
 
     @POST
     public Sala cadastrarSala(Sala sala) {
-        sala.setId((long) (salas.size() + 1));
-        salas.add(sala);
+        salaService.cadastrarSala(sala);
         return sala;
     }
 }
