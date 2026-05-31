@@ -15,6 +15,8 @@ public class ChatController {
 
     public static class MensagemRequest {
         public Long usuarioId;
+        public String cargo;
+        public String role;
         public String mensagem;
     }
 
