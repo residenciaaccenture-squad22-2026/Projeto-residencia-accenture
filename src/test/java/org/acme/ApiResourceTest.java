@@ -179,6 +179,282 @@ class ApiResourceTest {
     }
 
     @Test
+    void reservaDePosicaoNaoDeveAfetarDisponibilidadeDeSalas() {
+        Long salaLivreId = criarSala(StatusRecurso.DISPONIVEL);
+        Long posicaoOcupadaId = criarPosicao(StatusRecurso.DISPONIVEL);
+        LocalDateTime inicio = LocalDateTime.of(2026, 6, 16, 9, 0);
+        LocalDateTime fim = LocalDateTime.of(2026, 6, 16, 10, 0);
+
+        criarReservaPosicao(posicaoOcupadaId, inicio, fim);
+
+        List<Integer> ids = given()
+                .queryParam("inicio", inicio.toString())
+                .queryParam("fim", fim.toString())
+                .when().get("/disponibilidade/salas")
+                .then()
+                .statusCode(200)
+                .extract().path("id");
+
+        assertTrue(ids.contains(salaLivreId.intValue()));
+    }
+
+    @Test
+    void deveCadastrarUsuario() {
+        given()
+                .contentType("application/json")
+                .body(Map.of(
+                        "nome", "Marina Alves",
+                        "role", "gestor",
+                        "cargo", "Product Manager"))
+                .when().post("/usuarios")
+                .then()
+                .statusCode(201)
+                .body("nome", is("Marina Alves"))
+                .body("role", is("GESTOR"))
+                .body("cargo", is("Product Manager"));
+    }
+
+    @Test
+    void deveCriarReservaDePosicaoQuandoDisponivel() {
+        Long usuarioId = criarUsuario("Lucas Freitas", "FUNCIONARIO", "Dev");
+        Long posicaoId = criarPosicao(StatusRecurso.DISPONIVEL);
+        LocalDateTime inicio = LocalDateTime.of(2026, 6, 13, 9, 0);
+        LocalDateTime fim = LocalDateTime.of(2026, 6, 13, 10, 0);
+
+        given()
+                .contentType("application/json")
+                .body(Map.of(
+                        "posicaoId", posicaoId,
+                        "usuarioId", usuarioId,
+                        "responsavel", "Lucas Freitas",
+                        "dataHoraInicio", inicio.toString(),
+                        "dataHoraFim", fim.toString()))
+                .when().post("/reservas")
+                .then()
+                .statusCode(201)
+                .body("posicao.id", is(posicaoId.intValue()))
+                .body("usuario.id", is(usuarioId.intValue()))
+                .body("responsavel", is("Lucas Freitas"))
+                .body("status", is("ATIVA"));
+    }
+
+    @Test
+    void naoDevePermitirReservaComConflitoDePosicao() {
+        Long posicaoId = criarPosicao(StatusRecurso.DISPONIVEL);
+        LocalDateTime inicio = LocalDateTime.of(2026, 6, 14, 14, 0);
+        LocalDateTime fim = LocalDateTime.of(2026, 6, 14, 15, 0);
+
+        criarReservaPosicao(posicaoId, inicio, fim);
+
+        given()
+                .contentType("application/json")
+                .body(Map.of(
+                        "posicaoId", posicaoId,
+                        "responsavel", "Joao Santos",
+                        "dataHoraInicio", inicio.plusMinutes(30).toString(),
+                        "dataHoraFim", fim.plusMinutes(30).toString()))
+                .when().post("/reservas")
+                .then()
+                .statusCode(400)
+                .body("mensagem", is("Posicao indisponivel no periodo informado"));
+    }
+
+    @Test
+    void deveListarSomentePosicoesDisponiveisNoPeriodo() {
+        Long posicaoLivreId = criarPosicao(StatusRecurso.DISPONIVEL);
+        Long posicaoOcupadaId = criarPosicao(StatusRecurso.DISPONIVEL);
+        Long posicaoManutencaoId = criarPosicao(StatusRecurso.MANUTENCAO);
+        LocalDateTime inicio = LocalDateTime.of(2026, 6, 15, 9, 0);
+        LocalDateTime fim = LocalDateTime.of(2026, 6, 15, 10, 0);
+
+        criarReservaPosicao(posicaoOcupadaId, inicio, fim);
+
+        List<Integer> ids = given()
+                .queryParam("inicio", inicio.toString())
+                .queryParam("fim", fim.toString())
+                .when().get("/disponibilidade/posicoes")
+                .then()
+                .statusCode(200)
+                .extract().path("id");
+
+        assertTrue(ids.contains(posicaoLivreId.intValue()));
+        assertFalse(ids.contains(posicaoOcupadaId.intValue()));
+        assertFalse(ids.contains(posicaoManutencaoId.intValue()));
+    }
+
+    @Test
+    void deveCadastrarEquipamentoVinculadoAPosicao() {
+        Long posicaoId = criarPosicao(StatusRecurso.DISPONIVEL);
+
+        given()
+                .contentType("application/json")
+                .body(Map.of(
+                        "posicaoId", posicaoId,
+                        "nome", "Monitor posicao",
+                        "descricao", "Monitor identificado na planta",
+                        "tipo", "MONITOR",
+                        "status", StatusRecurso.DISPONIVEL.name()))
+                .when().post("/equipamentos")
+                .then()
+                .statusCode(201)
+                .body("posicaoId", is(posicaoId.intValue()))
+                .body("salaId", is((Object) null))
+                .body("tipo", is("MONITOR"));
+    }
+
+    @Test
+    void deveImportarResultadoDePlantaCadastrandoPosicoesEEquipamentos() {
+        Map<String, Object> body = Map.of(
+                "resumo", "Planta com duas posicoes",
+                "observacoes", "Importacao de teste",
+                "posicoes", List.of(
+                        Map.of(
+                                "codigo", "P-PLANTA-01",
+                                "descricao", "Posicao proxima a janela",
+                                "localizacao", "Bloco C",
+                                "recursos", "Monitor e dock",
+                                "confianca", 0.95,
+                                "equipamentos", List.of(
+                                        Map.of(
+                                                "nome", "Monitor Dell",
+                                                "tipo", "MONITOR",
+                                                "descricao", "Monitor sobre a mesa",
+                                                "confianca", 0.92),
+                                        Map.of(
+                                                "nome", "Dock USB-C",
+                                                "tipo", "DOCK",
+                                                "descricao", "Dock ao lado do monitor",
+                                                "confianca", 0.88))),
+                        Map.of(
+                                "codigo", "P-PLANTA-02",
+                                "descricao", "Posicao central",
+                                "localizacao", "Bloco C",
+                                "recursos", "Cadeira ergonomica",
+                                "confianca", 0.9,
+                                "equipamentos", List.of(
+                                        Map.of(
+                                                "nome", "Cadeira ergonomica",
+                                                "tipo", "CADEIRA",
+                                                "descricao", "Cadeira na posicao",
+                                                "confianca", 0.9)))));
+
+        given()
+                .contentType("application/json")
+                .body(body)
+                .when().post("/plantas/importar/resultado")
+                .then()
+                .statusCode(200)
+                .body("posicoesCadastradas", is(2))
+                .body("equipamentosCadastrados", is(3))
+                .body("posicoes[0].codigo", is("P-PLANTA-01"))
+                .body("posicoes[0].equipamentos.size()", is(2))
+                .body("posicoes[0].equipamentos[0].tipo", is("MON"))
+                .body("posicoes[0].equipamentos[1].tipo", is("DOC"))
+                .body("posicoes[1].equipamentos[0].tipo", is("CAD"));
+
+        List<String> codigos = given()
+                .when().get("/posicoes")
+                .then()
+                .statusCode(200)
+                .extract().path("codigo");
+
+        assertTrue(codigos.contains("P-PLANTA-01"));
+        assertTrue(codigos.contains("P-PLANTA-02"));
+    }
+
+    @Test
+    void deveImportarResultadoDePlantaCadastrandoSalaPosicoesEEquipamentos() {
+        Map<String, Object> body = Map.of(
+                "resumo", "Planta com sala, posicao e equipamentos",
+                "observacoes", "Importacao completa de teste",
+                "sala", Map.of(
+                        "nome", "Sala Planta " + System.nanoTime(),
+                        "descricao", "Sala identificada pela planta",
+                        "localizacao", "Bloco D",
+                        "capacidade", 1,
+                        "confianca", 0.93,
+                        "equipamentos", List.of(
+                                Map.of(
+                                        "nome", "Projetor sala",
+                                        "tipo", "PRO",
+                                        "descricao", "Projetor fixo no teto",
+                                        "confianca", 0.9))),
+                "posicoes", List.of(
+                        Map.of(
+                                "codigo", "P-SALA-PLANTA-" + System.nanoTime(),
+                                "descricao", "Posicao dentro da sala importada",
+                                "localizacao", "",
+                                "recursos", "Monitor e dock",
+                                "confianca", 0.91,
+                                "equipamentos", List.of(
+                                        Map.of(
+                                                "nome", "Monitor posicao sala",
+                                                "tipo", "MON",
+                                                "descricao", "Monitor sobre a mesa",
+                                                "confianca", 0.88)))));
+
+        Number salaId = given()
+                .contentType("application/json")
+                .body(body)
+                .when().post("/plantas/importar/resultado")
+                .then()
+                .statusCode(200)
+                .body("salasCadastradas", is(1))
+                .body("posicoesCadastradas", is(1))
+                .body("equipamentosCadastrados", is(2))
+                .body("sala.equipamentos[0].tipo", is("PRO"))
+                .body("posicoes[0].equipamentos[0].tipo", is("MON"))
+                .extract().path("sala.id");
+
+        List<Integer> equipamentosDaSala = given()
+                .queryParam("salaId", salaId.longValue())
+                .when().get("/equipamentos")
+                .then()
+                .statusCode(200)
+                .extract().path("id");
+
+        assertFalse(equipamentosDaSala.isEmpty());
+    }
+
+    @Test
+    void deveImportarResultadoDePlantaComSalaSemPosicoes() {
+        Map<String, Object> body = Map.of(
+                "resumo", "Imagem de sala sem posicoes rotuladas",
+                "observacoes", "Importacao somente da sala",
+                "sala", Map.of(
+                        "nome", "Sala Sem Posicoes " + System.nanoTime(),
+                        "descricao", "Sala com equipamento compartilhado",
+                        "localizacao", "Bloco E",
+                        "capacidade", 1,
+                        "confianca", 0.8,
+                        "equipamentos", List.of(
+                                Map.of(
+                                        "nome", "TV compartilhada",
+                                        "tipo", "TV",
+                                        "descricao", "TV na parede",
+                                        "confianca", 0.82))),
+                "posicoes", List.of());
+
+        Number salaId = given()
+                .contentType("application/json")
+                .body(body)
+                .when().post("/plantas/importar/resultado")
+                .then()
+                .statusCode(200)
+                .body("salasCadastradas", is(1))
+                .body("posicoesCadastradas", is(0))
+                .body("equipamentosCadastrados", is(1))
+                .body("sala.equipamentos[0].tipo", is("TV"))
+                .extract().path("sala.id");
+
+        given()
+                .when().get("/salas/{id}", salaId.longValue())
+                .then()
+                .statusCode(200)
+                .body("id", is(salaId.intValue()));
+    }
+
+    @Test
     void deveListarEquipamentosDentroDaSala() {
         Long salaId = criarSala(StatusRecurso.DISPONIVEL);
         Long outraSalaId = criarSala(StatusRecurso.DISPONIVEL);
@@ -338,9 +614,59 @@ class ApiResourceTest {
         return id.longValue();
     }
 
+    private Long criarUsuario(String nome, String role, String cargo) {
+        Number id = given()
+                .contentType("application/json")
+                .body(Map.of(
+                        "nome", nome,
+                        "role", role,
+                        "cargo", cargo))
+                .when().post("/usuarios")
+                .then()
+                .statusCode(201)
+                .extract().path("id");
+
+        return id.longValue();
+    }
+
+    private Long criarPosicao(StatusRecurso status) {
+        Number id = given()
+                .contentType("application/json")
+                .body(Map.of(
+                        "codigo", "P" + System.nanoTime(),
+                        "descricao", "Mesa de trabalho",
+                        "localizacao", "Bloco B",
+                        "recursos", "Monitor e cadeira ergonomica",
+                        "status", status.name()))
+                .when().post("/posicoes")
+                .then()
+                .statusCode(201)
+                .extract().path("id");
+
+        return id.longValue();
+    }
+
     private Long criarReserva(Long salaId, LocalDateTime inicio, LocalDateTime fim) {
         Map<String, Object> body = new java.util.HashMap<>();
         body.put("salaId", salaId);
+        body.put("responsavel", "Ana Costa");
+        body.put("dataHoraInicio", inicio.toString());
+        body.put("dataHoraFim", fim.toString());
+
+        Number id = given()
+                .contentType("application/json")
+                .body(body)
+                .when().post("/reservas")
+                .then()
+                .statusCode(201)
+                .extract().path("id");
+
+        return id.longValue();
+    }
+
+    private Long criarReservaPosicao(Long posicaoId, LocalDateTime inicio, LocalDateTime fim) {
+        Map<String, Object> body = new java.util.HashMap<>();
+        body.put("posicaoId", posicaoId);
         body.put("responsavel", "Ana Costa");
         body.put("dataHoraInicio", inicio.toString());
         body.put("dataHoraFim", fim.toString());

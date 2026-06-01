@@ -9,6 +9,8 @@ public class ReservaResponse {
 
     private Long id;
     private SalaResponse sala;
+    private PosicaoResponse posicao;
+    private UsuarioResponse usuario;
     private String responsavel;
     private LocalDateTime dataHoraInicio;
     private LocalDateTime dataHoraFim;
@@ -17,10 +19,13 @@ public class ReservaResponse {
     public ReservaResponse() {
     }
 
-    public ReservaResponse(Long id, SalaResponse sala, String responsavel,
+    public ReservaResponse(Long id, SalaResponse sala, PosicaoResponse posicao, UsuarioResponse usuario,
+            String responsavel,
             LocalDateTime dataHoraInicio, LocalDateTime dataHoraFim, StatusReserva status) {
         this.id = id;
         this.sala = sala;
+        this.posicao = posicao;
+        this.usuario = usuario;
         this.responsavel = responsavel;
         this.dataHoraInicio = dataHoraInicio;
         this.dataHoraFim = dataHoraFim;
@@ -31,6 +36,8 @@ public class ReservaResponse {
         return new ReservaResponse(
                 reserva.getId(),
                 SalaResponse.from(reserva.getSala()),
+                PosicaoResponse.from(reserva.getPosicao()),
+                UsuarioResponse.from(reserva.getUsuario()),
                 reserva.getResponsavel(),
                 reserva.getDataHoraInicio(),
                 reserva.getDataHoraFim(),
@@ -51,6 +58,22 @@ public class ReservaResponse {
 
     public void setSala(SalaResponse sala) {
         this.sala = sala;
+    }
+
+    public PosicaoResponse getPosicao() {
+        return posicao;
+    }
+
+    public void setPosicao(PosicaoResponse posicao) {
+        this.posicao = posicao;
+    }
+
+    public UsuarioResponse getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(UsuarioResponse usuario) {
+        this.usuario = usuario;
     }
 
     public String getResponsavel() {

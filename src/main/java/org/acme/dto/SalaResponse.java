@@ -28,6 +28,10 @@ public class SalaResponse {
     }
 
     public static SalaResponse from(Sala sala) {
+        if (sala == null) {
+            return null;
+        }
+
         return new SalaResponse(
                 sala.getId(),
                 sala.getNome(),

@@ -2,6 +2,7 @@ package org.acme.controller;
 
 import java.util.List;
 
+import org.acme.dto.PosicaoResponse;
 import org.acme.dto.SalaResponse;
 import org.acme.service.DisponibilidadeService;
 import org.acme.util.DataHoraUtil;
@@ -29,6 +30,18 @@ public class DisponibilidadeController {
                 DataHoraUtil.converter(inicio),
                 DataHoraUtil.converter(fim)).stream()
                 .map(SalaResponse::from)
+                .toList();
+    }
+
+    @GET
+    @Path("/posicoes")
+    public List<PosicaoResponse> listarPosicoesDisponiveis(
+            @QueryParam("inicio") String inicio,
+            @QueryParam("fim") String fim) {
+        return disponibilidadeService.listarPosicoesDisponiveis(
+                DataHoraUtil.converter(inicio),
+                DataHoraUtil.converter(fim)).stream()
+                .map(PosicaoResponse::from)
                 .toList();
     }
 

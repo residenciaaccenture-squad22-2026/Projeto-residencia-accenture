@@ -34,9 +34,16 @@ public class ReservaController {
     ReservaService reservaService;
 
     @GET
-    public List<ReservaResponse> listarReservas(@QueryParam("salaId") Long salaId) {
+    public List<ReservaResponse> listarReservas(@QueryParam("salaId") Long salaId,
+            @QueryParam("posicaoId") Long posicaoId) {
         if (salaId != null) {
             return reservaService.listarPorSala(salaId).stream()
+                    .map(ReservaResponse::from)
+                    .toList();
+        }
+
+        if (posicaoId != null) {
+            return reservaService.listarPorPosicao(posicaoId).stream()
                     .map(ReservaResponse::from)
                     .toList();
         }
@@ -44,6 +51,19 @@ public class ReservaController {
         return reservaService.listarReservas().stream()
                 .map(ReservaResponse::from)
                 .toList();
+    }
+
+    @GET
+    @Path("/disponibilidade/posicao/{posicaoId}")
+    public DisponibilidadeResponse consultarDisponibilidadePosicao(
+            @PathParam("posicaoId") Long posicaoId,
+            @QueryParam("inicio") String inicio,
+            @QueryParam("fim") String fim) {
+        boolean disponivel = reservaService.posicaoDisponivel(posicaoId, DataHoraUtil.converter(inicio),
+                DataHoraUtil.converter(fim));
+        String mensagem = disponivel ? "Posicao disponivel" : "Posicao indisponivel no periodo informado";
+
+        return new DisponibilidadeResponse(disponivel, mensagem);
     }
 
     @GET

@@ -4,12 +4,16 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.acme.dto.ReservaRequest;
+import org.acme.model.Posicao;
 import org.acme.model.Reserva;
 import org.acme.model.Sala;
 import org.acme.model.StatusRecurso;
 import org.acme.model.StatusReserva;
+import org.acme.model.Usuario;
+import org.acme.repository.PosicaoRepository;
 import org.acme.repository.ReservaRepository;
 import org.acme.repository.SalaRepository;
+import org.acme.repository.UsuarioRepository;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -26,6 +30,12 @@ public class ReservaService {
     @Inject
     SalaRepository salaRepository;
 
+    @Inject
+    PosicaoRepository posicaoRepository;
+
+    @Inject
+    UsuarioRepository usuarioRepository;
+
     public List<Reserva> listarReservas() {
         return reservaRepository.listAll();
     }
@@ -38,6 +48,10 @@ public class ReservaService {
         return reservaRepository.listarPorSala(salaId);
     }
 
+    public List<Reserva> listarPorPosicao(Long posicaoId) {
+        return reservaRepository.listarPorPosicao(posicaoId);
+    }
+
     public boolean salaDisponivel(Long salaId, LocalDateTime inicio, LocalDateTime fim) {
         validarPeriodo(inicio, fim);
         Sala sala = buscarSalaObrigatoria(salaId);
@@ -45,6 +59,15 @@ public class ReservaService {
             return false;
         }
         return !reservaRepository.existeConflitoSala(salaId, inicio, fim, null);
+    }
+
+    public boolean posicaoDisponivel(Long posicaoId, LocalDateTime inicio, LocalDateTime fim) {
+        validarPeriodo(inicio, fim);
+        Posicao posicao = buscarPosicaoObrigatoria(posicaoId);
+        if (posicao.getStatus() != StatusRecurso.DISPONIVEL) {
+            return false;
+        }
+        return !reservaRepository.existeConflitoPosicao(posicaoId, inicio, fim, null);
     }
 
     @Transactional
@@ -91,14 +114,28 @@ public class ReservaService {
     private void aplicarDados(Reserva reserva, ReservaRequest request, Long reservaIgnoradaId) {
         validarRequest(request);
 
-        Sala sala = buscarSalaObrigatoria(request.getSalaId());
-        if (sala.getStatus() != StatusRecurso.DISPONIVEL) {
-            throw new BadRequestException("Sala indisponivel no periodo informado");
+        Sala sala = null;
+        Posicao posicao = null;
+
+        if (request.getSalaId() != null) {
+            sala = buscarSalaObrigatoria(request.getSalaId());
+            if (sala.getStatus() != StatusRecurso.DISPONIVEL) {
+                throw new BadRequestException("Sala indisponivel no periodo informado");
+            }
+        }
+
+        if (request.getPosicaoId() != null) {
+            posicao = buscarPosicaoObrigatoria(request.getPosicaoId());
+            if (posicao.getStatus() != StatusRecurso.DISPONIVEL) {
+                throw new BadRequestException("Posicao indisponivel no periodo informado");
+            }
         }
 
         validarConflitos(request, reservaIgnoradaId);
 
         reserva.setSala(sala);
+        reserva.setPosicao(posicao);
+        reserva.setUsuario(buscarUsuarioOpcional(request.getUsuarioId()));
         reserva.setResponsavel(request.getResponsavel());
         reserva.setDataHoraInicio(request.getDataHoraInicio());
         reserva.setDataHoraFim(request.getDataHoraFim());
@@ -113,8 +150,12 @@ public class ReservaService {
             throw new BadRequestException("Dados da reserva sao obrigatorios");
         }
 
-        if (request.getSalaId() == null) {
-            throw new BadRequestException("Sala e obrigatoria");
+        if (request.getSalaId() == null && request.getPosicaoId() == null) {
+            throw new BadRequestException("Sala ou posicao e obrigatoria");
+        }
+
+        if (request.getSalaId() != null && request.getPosicaoId() != null) {
+            throw new BadRequestException("Informe apenas sala ou posicao por reserva");
         }
 
         if (request.getResponsavel() == null || request.getResponsavel().isBlank()) {
@@ -135,14 +176,28 @@ public class ReservaService {
     }
 
     private void validarConflitos(ReservaRequest request, Long reservaIgnoradaId) {
-        boolean salaOcupada = reservaRepository.existeConflitoSala(
-                request.getSalaId(),
-                request.getDataHoraInicio(),
-                request.getDataHoraFim(),
-                reservaIgnoradaId);
+        if (request.getSalaId() != null) {
+            boolean salaOcupada = reservaRepository.existeConflitoSala(
+                    request.getSalaId(),
+                    request.getDataHoraInicio(),
+                    request.getDataHoraFim(),
+                    reservaIgnoradaId);
 
-        if (salaOcupada) {
-            throw new BadRequestException("Sala indisponivel no periodo informado");
+            if (salaOcupada) {
+                throw new BadRequestException("Sala indisponivel no periodo informado");
+            }
+        }
+
+        if (request.getPosicaoId() != null) {
+            boolean posicaoOcupada = reservaRepository.existeConflitoPosicao(
+                    request.getPosicaoId(),
+                    request.getDataHoraInicio(),
+                    request.getDataHoraFim(),
+                    reservaIgnoradaId);
+
+            if (posicaoOcupada) {
+                throw new BadRequestException("Posicao indisponivel no periodo informado");
+            }
         }
 
     }
@@ -153,6 +208,26 @@ public class ReservaService {
             throw new NotFoundException("Sala nao encontrada");
         }
         return sala;
+    }
+
+    private Posicao buscarPosicaoObrigatoria(Long posicaoId) {
+        Posicao posicao = posicaoRepository.findById(posicaoId);
+        if (posicao == null) {
+            throw new NotFoundException("Posicao nao encontrada");
+        }
+        return posicao;
+    }
+
+    private Usuario buscarUsuarioOpcional(Long usuarioId) {
+        if (usuarioId == null) {
+            return null;
+        }
+
+        Usuario usuario = usuarioRepository.findById(usuarioId);
+        if (usuario == null) {
+            throw new NotFoundException("Usuario nao encontrado");
+        }
+        return usuario;
     }
 
 }

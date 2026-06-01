@@ -30,8 +30,12 @@ public class Equipamento extends PanacheEntityBase {
     private String tipo;
 
     @ManyToOne
-    @JoinColumn(name = "sala_id", nullable = false)
+    @JoinColumn(name = "sala_id")
     private Sala sala;
+
+    @ManyToOne
+    @JoinColumn(name = "posicao_id")
+    private Posicao posicao;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
@@ -86,6 +90,14 @@ public class Equipamento extends PanacheEntityBase {
 
     public void setSala(Sala sala) {
         this.sala = sala;
+    }
+
+    public Posicao getPosicao() {
+        return posicao;
+    }
+
+    public void setPosicao(Posicao posicao) {
+        this.posicao = posicao;
     }
 
     public StatusRecurso getStatus() {

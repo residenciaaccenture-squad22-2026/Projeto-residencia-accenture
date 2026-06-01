@@ -18,8 +18,16 @@ public class ReservaRepository implements PanacheRepository<Reserva> {
         return list("sala.id", salaId);
     }
 
+    public List<Reserva> listarPorPosicao(Long posicaoId) {
+        return list("posicao.id", posicaoId);
+    }
+
     public boolean existeReservaParaSala(Long salaId) {
         return count("sala.id", salaId) > 0;
+    }
+
+    public boolean existeReservaParaPosicao(Long posicaoId) {
+        return count("posicao.id", posicaoId) > 0;
     }
 
     public boolean existeConflitoSala(Long salaId, LocalDateTime inicio, LocalDateTime fim, Long reservaIgnoradaId) {
@@ -27,7 +35,7 @@ public class ReservaRepository implements PanacheRepository<Reserva> {
         params.put("salaId", salaId);
         params.put("inicio", inicio);
         params.put("fim", fim);
-        params.put("status", StatusReserva.ATIVA);
+        params.put("status", StatusReserva.ATIVA.name());
 
         String filtroReservaIgnorada = "";
         if (reservaIgnoradaId != null) {
@@ -37,6 +45,29 @@ public class ReservaRepository implements PanacheRepository<Reserva> {
 
         return count("""
                 sala.id = :salaId
+                and status = :status
+                and dataHoraInicio < :fim
+                and dataHoraFim > :inicio
+                %s
+                """.formatted(filtroReservaIgnorada), params) > 0;
+    }
+
+    public boolean existeConflitoPosicao(Long posicaoId, LocalDateTime inicio, LocalDateTime fim,
+            Long reservaIgnoradaId) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("posicaoId", posicaoId);
+        params.put("inicio", inicio);
+        params.put("fim", fim);
+        params.put("status", StatusReserva.ATIVA.name());
+
+        String filtroReservaIgnorada = "";
+        if (reservaIgnoradaId != null) {
+            params.put("reservaIgnoradaId", reservaIgnoradaId);
+            filtroReservaIgnorada = "and id <> :reservaIgnoradaId";
+        }
+
+        return count("""
+                posicao.id = :posicaoId
                 and status = :status
                 and dataHoraInicio < :fim
                 and dataHoraFim > :inicio

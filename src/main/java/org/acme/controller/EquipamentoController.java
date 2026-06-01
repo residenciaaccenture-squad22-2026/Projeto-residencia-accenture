@@ -33,9 +33,16 @@ public class EquipamentoController {
     EquipamentoService equipamentoService;
 
     @GET
-    public List<EquipamentoResponse> listarEquipamentos(@QueryParam("salaId") Long salaId) {
+    public List<EquipamentoResponse> listarEquipamentos(@QueryParam("salaId") Long salaId,
+            @QueryParam("posicaoId") Long posicaoId) {
         if (salaId != null) {
             return equipamentoService.listarPorSala(salaId).stream()
+                    .map(EquipamentoResponse::from)
+                    .toList();
+        }
+
+        if (posicaoId != null) {
+            return equipamentoService.listarPorPosicao(posicaoId).stream()
                     .map(EquipamentoResponse::from)
                     .toList();
         }
@@ -61,7 +68,8 @@ public class EquipamentoController {
     public Response cadastrarEquipamento(@Valid EquipamentoRequest request) {
         Equipamento equipamentoCadastrado = equipamentoService.cadastrarEquipamento(
                 ApiMapper.toEquipamento(request),
-                request.getSalaId());
+                request.getSalaId(),
+                request.getPosicaoId());
 
         return Response
                 .created(URI.create("/equipamentos/" + equipamentoCadastrado.getId()))
@@ -75,7 +83,8 @@ public class EquipamentoController {
         Equipamento equipamentoAtualizado = equipamentoService.atualizarEquipamento(
                 id,
                 ApiMapper.toEquipamento(request),
-                request.getSalaId());
+                request.getSalaId(),
+                request.getPosicaoId());
 
         if (equipamentoAtualizado == null) {
             throw new NotFoundException("Equipamento nao encontrado");

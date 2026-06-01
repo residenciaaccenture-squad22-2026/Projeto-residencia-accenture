@@ -10,17 +10,20 @@ public class EquipamentoResponse {
     private String descricao;
     private String tipo;
     private Long salaId;
+    private Long posicaoId;
     private StatusRecurso status;
 
     public EquipamentoResponse() {
     }
 
-    public EquipamentoResponse(Long id, String nome, String descricao, String tipo, Long salaId, StatusRecurso status) {
+    public EquipamentoResponse(Long id, String nome, String descricao, String tipo, Long salaId, Long posicaoId,
+            StatusRecurso status) {
         this.id = id;
         this.nome = nome;
         this.descricao = descricao;
         this.tipo = tipo;
         this.salaId = salaId;
+        this.posicaoId = posicaoId;
         this.status = status;
     }
 
@@ -31,6 +34,7 @@ public class EquipamentoResponse {
                 equipamento.getDescricao(),
                 equipamento.getTipo(),
                 equipamento.getSala() == null ? null : equipamento.getSala().getId(),
+                equipamento.getPosicao() == null ? null : equipamento.getPosicao().getId(),
                 equipamento.getStatus());
     }
 
@@ -72,6 +76,14 @@ public class EquipamentoResponse {
 
     public void setSalaId(Long salaId) {
         this.salaId = salaId;
+    }
+
+    public Long getPosicaoId() {
+        return posicaoId;
+    }
+
+    public void setPosicaoId(Long posicaoId) {
+        this.posicaoId = posicaoId;
     }
 
     public StatusRecurso getStatus() {

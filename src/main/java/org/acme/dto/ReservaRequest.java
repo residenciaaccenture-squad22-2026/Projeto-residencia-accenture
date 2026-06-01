@@ -7,8 +7,11 @@ import jakarta.validation.constraints.NotNull;
 
 public class ReservaRequest {
 
-    @NotNull(message = "Sala e obrigatoria")
     private Long salaId;
+
+    private Long posicaoId;
+
+    private Long usuarioId;
 
     @NotBlank(message = "Responsavel e obrigatorio")
     private String responsavel;
@@ -25,6 +28,22 @@ public class ReservaRequest {
 
     public void setSalaId(Long salaId) {
         this.salaId = salaId;
+    }
+
+    public Long getPosicaoId() {
+        return posicaoId;
+    }
+
+    public void setPosicaoId(Long posicaoId) {
+        this.posicaoId = posicaoId;
+    }
+
+    public Long getUsuarioId() {
+        return usuarioId;
+    }
+
+    public void setUsuarioId(Long usuarioId) {
+        this.usuarioId = usuarioId;
     }
 
     public String getResponsavel() {

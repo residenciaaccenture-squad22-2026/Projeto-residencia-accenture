@@ -23,9 +23,6 @@ DB_USER=seu_usuario
 DB_PASSWORD=sua_senha
 DB_URL=jdbc:postgresql://host:porta/postgres?sslmode=require
 
-SUPABASE_URL=https://seu_projeto.supabase.co
-SUPABASE_ANON_KEY=sua_chave
-
 CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 ```
 
@@ -34,7 +31,7 @@ O arquivo `.env` contem informacoes sensiveis e ja esta listado no `.gitignore`.
 Antes de executar comandos Maven, entre na pasta do projeto:
 
 ```powershell
-cd C:\Users\joaol\Downloads\residencia-accenture\residencia-accenture
+cd C:\Users\joaol\OneDrive\Documentos\residencia-accenture\Projeto-residencia-accenture
 ```
 
 ## Executando
@@ -134,11 +131,22 @@ Com a aplicacao em execucao, acesse:
 ## Endpoints
 
 - `GET /status`
+- `POST /api/chat`
+- `GET /usuarios`
+- `POST /usuarios`
+- `GET /usuarios/{id}`
+- `PUT /usuarios/{id}`
+- `DELETE /usuarios/{id}`
 - `GET /salas`
 - `POST /salas`
 - `GET /salas/{id}`
 - `PUT /salas/{id}`
 - `DELETE /salas/{id}`
+- `GET /posicoes`
+- `POST /posicoes`
+- `GET /posicoes/{id}`
+- `PUT /posicoes/{id}`
+- `DELETE /posicoes/{id}`
 - `GET /equipamentos`
 - `POST /equipamentos`
 - `GET /equipamentos/{id}`
@@ -151,13 +159,16 @@ Com a aplicacao em execucao, acesse:
 - `PUT /reservas/{id}/cancelar`
 - `DELETE /reservas/{id}`
 - `GET /reservas/disponibilidade/sala/{salaId}?inicio=2026-06-01T09:00:00&fim=2026-06-01T10:00:00`
-- `GET /reservas/disponibilidade/equipamento/{equipamentoId}?inicio=2026-06-01T09:00:00&fim=2026-06-01T10:00:00`
+- `GET /reservas/disponibilidade/posicao/{posicaoId}?inicio=2026-06-01T09:00:00&fim=2026-06-01T10:00:00`
 - `GET /disponibilidade/salas?inicio=2026-06-01T09:00:00&fim=2026-06-01T10:00:00`
-- `GET /disponibilidade/equipamentos?inicio=2026-06-01T09:00:00&fim=2026-06-01T10:00:00`
+- `GET /disponibilidade/posicoes?inicio=2026-06-01T09:00:00&fim=2026-06-01T10:00:00`
+- `POST /plantas/analisar`
+- `POST /plantas/importar`
+- `POST /plantas/importar/resultado`
 
 ## Status dos recursos
 
-Salas e equipamentos aceitam os seguintes valores:
+Salas, posicoes e equipamentos aceitam os seguintes valores:
 
 - `DISPONIVEL`
 - `INDISPONIVEL`
@@ -169,7 +180,8 @@ Somente recursos com status `DISPONIVEL` podem aparecer como disponiveis ou sere
 
 - Sala deve ter `nome` e `capacidade` maior que zero.
 - Equipamento deve ter `nome` e `tipo`.
-- Reserva deve ter `salaId`, `responsavel`, `dataHoraInicio` e `dataHoraFim`.
+- Reserva deve ter `salaId` ou `posicaoId`, `responsavel`, `dataHoraInicio` e `dataHoraFim`.
+- Uma reserva nao pode informar `salaId` e `posicaoId` ao mesmo tempo.
 - `dataHoraInicio` deve ser anterior a `dataHoraFim`.
 
 ## Fluxo de teste manual
@@ -178,7 +190,7 @@ Use o Swagger UI e execute nesta ordem:
 
 1. Crie uma sala com `POST /salas`.
 2. Crie um equipamento com `POST /equipamentos`.
-3. Crie uma reserva com `POST /reservas`, usando o `id` da sala e, opcionalmente, o `id` do equipamento.
+3. Crie uma reserva com `POST /reservas`, usando o `id` da sala ou o `id` da posicao.
 4. Consulte `GET /reservas` para confirmar a reserva criada.
 5. Consulte disponibilidade em `GET /reservas/disponibilidade/sala/{salaId}`.
 6. Cancele a reserva com `PUT /reservas/{id}/cancelar`.
@@ -206,14 +218,93 @@ Exemplo de equipamento:
 }
 ```
 
+Exemplo de posicao:
+
+```json
+{
+  "codigo": "P12",
+  "descricao": "Mesa de trabalho proxima a janela",
+  "localizacao": "Bloco B",
+  "recursos": "Monitor ultrawide e cadeira ergonomica",
+  "status": "DISPONIVEL"
+}
+```
+
 ## Exemplo de reserva
 
 ```json
 {
   "salaId": 1,
-  "equipamentoId": 1,
   "responsavel": "Maria Silva",
   "dataHoraInicio": "2026-06-01T09:00:00",
   "dataHoraFim": "2026-06-01T10:00:00"
 }
 ```
+
+Exemplo de reserva de posicao:
+
+```json
+{
+  "posicaoId": 1,
+  "usuarioId": 1,
+  "responsavel": "Maria Silva",
+  "dataHoraInicio": "2026-06-01T09:00:00",
+  "dataHoraFim": "2026-06-01T10:00:00"
+}
+```
+
+## Importacao por foto da planta
+
+O endpoint `POST /plantas/importar` recebe uma imagem em Base64, envia para a OpenAI Responses API e cadastra a sala, as posicoes e os equipamentos detectados no banco configurado, incluindo Supabase quando `DB_URL` aponta para ele.
+
+```json
+{
+  "mimeType": "image/png",
+  "nomeArquivo": "planta-andar-3.png",
+  "imagemBase64": "iVBORw0KGgoAAA...",
+  "cadastrar": true
+}
+```
+
+Para revisar antes de cadastrar, use `POST /plantas/analisar` ou envie `"cadastrar": false`. Depois, o JSON revisado pode ser persistido com `POST /plantas/importar/resultado`:
+
+```json
+{
+  "resumo": "Planta com uma sala e duas posicoes",
+  "observacoes": "Confianca alta nos rotulos visiveis",
+  "sala": {
+    "nome": "Sala Andar 3",
+    "descricao": "Sala identificada na planta",
+    "localizacao": "Bloco B",
+    "capacidade": 2,
+    "confianca": 0.95,
+    "equipamentos": [
+      {
+        "nome": "Projetor",
+        "tipo": "PRO",
+        "descricao": "Projetor fixo na sala",
+        "confianca": 0.9
+      }
+    ]
+  },
+  "posicoes": [
+    {
+      "codigo": "P12",
+      "descricao": "Mesa proxima a janela",
+      "localizacao": "Bloco B",
+      "recursos": "Monitor e dock",
+      "confianca": 0.95,
+      "equipamentos": [
+        {
+          "nome": "Monitor Dell",
+          "tipo": "MON",
+          "descricao": "Monitor sobre a mesa",
+          "confianca": 0.92
+        }
+      ]
+    }
+  ]
+}
+```
+
+Configure `OPENAI_API_KEY` para a analise real da imagem. Opcionalmente, ajuste `OPENAI_VISION_MODEL`, `OPENAI_VISION_MAX_OUTPUT_TOKENS` e `OPENAI_VISION_IMAGE_DETAIL`; o padrao atual do projeto e `gpt-4.1-mini`, `1800` tokens de saida e `low` para reduzir custo.
