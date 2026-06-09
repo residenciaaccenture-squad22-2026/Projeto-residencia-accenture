@@ -1,94 +1,86 @@
-package org.acme.ai;
+package org.acme.agente;
 
-import dev.langchain4j.agent.tool.Tool;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
+import dev.langchain4j.agent.tool.Tool;
+import org.acme.domain.Usuario;
+import org.acme.domain.Reserva;
+import org.acme.domain.Espaco;
+import java.time.LocalDateTime;
 import java.util.List;
-
-import org.acme.model.Usuario;
-import org.acme.model.Reserva;
-import org.acme.model.Posicao;
 
 @ApplicationScoped
 public class ReservaChatTools {
 
-    @Tool("Busca os dados do usuário atual, incluindo sua role e seu cargo exato na empresa")
-    public Usuario buscarDadosUsuario(Long usuarioId) {
-        return Usuario.findById(usuarioId);
+    @Tool("Buscar todos os usuários cadastrados")
+    public List<Usuario> buscarUsuarios() {
+        return Usuario.listAll();
     }
 
-    @Tool("Lista todas as reservas ativas do usuário")
-    public List<Reserva> listarReservasAtivas(Long usuarioId) {
-        // Retorna apenas reservas com status ATIVA no banco
-        return Reserva.list("usuario.id = ?1 and status = 'ATIVA'", usuarioId);
+    @Tool("Buscar todas as reservas cadastradas")
+    public List<Reserva> buscarReservas() {
+        return Reserva.listAll();
     }
 
-    @Tool("Busca no banco de dados todas as posições de trabalho que estão atualmente com status DISPONIVEL")
-    public List<Posicao> buscarPosicoesDisponiveis() {
-        // Aqui pegamos dinamicamente do banco todas as mesas livres para a IA analisar
-        return Posicao.list("status", "DISPONIVEL");
+    @Tool("Buscar todos os espaços (salas/posições) cadastrados no sistema")
+    public List<Espaco> buscarEspacos() {
+        return Espaco.listAll();
     }
 
+    @Tool("Buscar espaços que estão ativos e disponíveis para uso")
+    public List<Espaco> buscarEspacosDisponiveis() {
+        // CORREÇÃO: Na classe Espaco o atributo de disponibilidade se chama 'ativo' (boolean)
+        return Espaco.list("ativo", true);
+    }
+
+    @Tool("Criar uma nova reserva de espaço")
     @Transactional
-    @Tool("Efetua a reserva de uma posição específica para o usuário")
-    public String reservarPosicao(Long usuarioId, Long posicaoId) {
-        Usuario user = Usuario.findById(usuarioId);
-        Posicao posicao = Posicao.findById(posicaoId);
+    public String criarReserva(Long usuarioId, Long espacoId, String inicioStr, String fimStr) {
+        Usuario usuario = Usuario.findById(usuarioId);
+        Espaco espaco = Espaco.findById(espacoId);
 
-        if (posicao == null || !posicao.status.equals("DISPONIVEL")) {
-            return "Erro: Posição não existe ou já está ocupada.";
+        if (usuario == null) return "Erro: Usuário não encontrado.";
+        if (espaco == null) return "Erro: Espaço não encontrado.";
+        if (!espaco.ativo) return "Erro: Este espaço não está ativo para reservas.";
+
+        try {
+            LocalDateTime inicio = LocalDateTime.parse(inicioStr);
+            LocalDateTime fim = LocalDateTime.parse(fimStr);
+
+            Reserva reserva = new Reserva();
+            reserva.usuario = usuario;
+            reserva.espaco = espaco;
+            reserva.dataInicio = inicio;
+            reserva.dataFim = fim;
+            reserva.status = "ATIVA"; // Usando a String conforme configurado anteriormente
+
+            reserva.persist();
+            return "Reserva criada com sucesso! ID: " + reserva.id;
+        } catch (Exception e) {
+            return "Erro ao criar reserva: " + e.getMessage();
         }
-
-        // Regra de negócio estrita mantida no Java por segurança
-        if (user.role.equals("FUNCIONARIO")) {
-            long ativas = Reserva.count("usuario.id = ?1 and status = 'ATIVA'", usuarioId);
-            if (ativas >= 1) {
-                return "Erro de regra de negócio: Funcionários normais só podem ter 1 reserva ativa por vez. Peça para o usuário cancelar a anterior.";
-            }
-        }
-
-        // Efetua a reserva
-        Reserva novaReserva = new Reserva();
-        novaReserva.usuario = user;
-        novaReserva.posicao = posicao;
-        novaReserva.status = "ATIVA";
-        novaReserva.persist();
-
-        // Atualiza status da posição
-        posicao.disponivel = "FALSE";
-        posicao.persist();
-
-        return "Reserva realizada com sucesso para a posição " + posicao.nome;
     }
 
+    @Tool("Cancelar uma reserva existente")
     @Transactional
-    @Tool("Cancela uma reserva pelo seu ID")
-    public String cancelarReserva(Long usuarioId, Long reservaId) {
-        Usuario user = Usuario.findById(usuarioId);
+    public String cancelarReserva(Long reservaId) {
         Reserva reserva = Reserva.findById(reservaId);
+        if (reserva == null) return "Erro: Reserva não encontrada.";
 
-        if (reserva == null) return "Reserva não encontrada.";
-
-        if (!reserva.usuario.id.equals(usuarioId) && !user.role.equals("ADMIN")) {
-            return "Erro: Acesso negado. Apenas ADMIN pode cancelar reserva de terceiros.";
-        }
-
+        // CORREÇÃO: O atributo na classe Reserva chama-se 'status'
         reserva.status = "CANCELADA";
-        // Libera a posição
-        reserva.posicao.status = "DISPONIVEL";
-
         return "Reserva " + reservaId + " cancelada com sucesso.";
     }
 
+    @Tool("Bloquear ou desativar um espaço temporariamente")
     @Transactional
-    @Tool("Desativa uma sala ou posição mudando o status para INATIVA (Exige ser ADMIN)")
-    public String desativarPosicao(Long usuarioId, Long posicaoId) {
-        Usuario user = Usuario.findById(usuarioId);
-        if (!user.role.equals("ADMIN")) {
-            return "Erro: Permissão negada. Apenas ADMIN.";
-        }
-        Posicao pos = Posicao.findById(posicaoId);
-        pos.status = "INATIVA";
-        return "Posição inativada com sucesso.";
+    public String alterarStatusEspaco(Long espacoId, boolean ativo) {
+        Espaco espaco = Espaco.findById(espacoId);
+        if (espaco == null) return "Erro: Espaço não encontrado.";
+
+        // CORREÇÃO: O atributo na classe Espaco chama-se 'ativo'
+        espaco.ativo = ativo;
+        String statusTexto = ativo ? "ativado" : "desativado";
+        return "O espaço " + espaco.nome + " foi " + statusTexto + " com sucesso.";
     }
 }

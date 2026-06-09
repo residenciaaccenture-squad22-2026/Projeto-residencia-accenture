@@ -1,9 +1,11 @@
-package org.acme.agent;
+package org.acme.agente;
 
 import dev.langchain4j.agent.tool.Tool;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.acme.service.ReservaService;
+
+import org.acme.domain.Espaco;
 
 import java.util.List;
 

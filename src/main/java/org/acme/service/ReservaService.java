@@ -26,7 +26,8 @@ public class ReservaService {
         }
 
         // Regras 1, 3 e 5: Limites de reservas ativas
-        long reservasAtivas = Reserva.count("usuario = ?1 and status = ?2", alvo, StatusReserva.ATIVA);
+        // Utilizando String "ATIVA" em vez do Enum
+        long reservasAtivas = Reserva.count("usuario = ?1 and status = ?2", alvo, "ATIVA");
         if (alvo.role == Role.FUNCIONARIO && reservasAtivas >= 1) {
             throw new IllegalStateException("Funcionários só podem ter uma reserva ativa.");
         }
@@ -36,7 +37,7 @@ public class ReservaService {
         reserva.espaco = espaco;
         reserva.dataInicio = inicio;
         reserva.dataFim = fim;
-        reserva.status = StatusReserva.ATIVA;
+        reserva.status = "ATIVA"; // Utilizando String em vez do Enum
         reserva.persist();
 
         return reserva;
@@ -52,7 +53,7 @@ public class ReservaService {
         boolean isAdmin = executor.role == Role.ADMIN;
 
         if (isDono || isAdmin) {
-            reserva.status = StatusReserva.CANCELADA;
+            reserva.status = "CANCELADA"; // Utilizando String em vez do Enum
         } else {
             throw new SecurityException("Você não tem permissão para cancelar esta reserva.");
         }

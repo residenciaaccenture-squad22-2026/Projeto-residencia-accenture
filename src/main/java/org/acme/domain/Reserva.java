@@ -11,7 +11,7 @@ public class Reserva extends PanacheEntity {
     public Usuario usuario;
 
     @ManyToOne
-    public Espaco posicao;
+    public Espaco espaco;
 
     public LocalDateTime dataInicio;
     public LocalDateTime dataFim;
