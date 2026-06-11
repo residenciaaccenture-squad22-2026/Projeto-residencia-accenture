@@ -1,2 +1,0 @@
--- Arquivo reservado para cargas iniciais em ambiente de desenvolvimento/teste.
--- Mantido vazio para evitar dados automaticos em execucoes locais.
