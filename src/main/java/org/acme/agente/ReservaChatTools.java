@@ -6,6 +6,7 @@ import dev.langchain4j.agent.tool.Tool;
 import org.acme.domain.Usuario;
 import org.acme.domain.Reserva;
 import org.acme.domain.Espaco;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -27,11 +28,6 @@ public class ReservaChatTools {
         return Espaco.listAll();
     }
 
-    @Tool("Buscar espaços que estão ativos e disponíveis para uso")
-    public List<Espaco> buscarEspacosDisponiveis() {
-        // CORREÇÃO: Na classe Espaco o atributo de disponibilidade se chama 'ativo' (boolean)
-        return Espaco.list("ativo", true);
-    }
 
     @Tool("Criar uma nova reserva de espaço")
     @Transactional
@@ -82,5 +78,18 @@ public class ReservaChatTools {
         espaco.ativo = ativo;
         String statusTexto = ativo ? "ativado" : "desativado";
         return "O espaço " + espaco.nome + " foi " + statusTexto + " com sucesso.";
+    }
+
+    @Tool("Buscar todos os espaços (salas e posições de trabalho) que estão ativos, válidos e disponíveis")
+    public List<Espaco> buscarEspacosDisponiveis() {
+        // O Panache vai lá no Supabase e traz apenas os espaços onde ativo = true
+        return Espaco.list("ativo", true);
+    }
+
+    @Tool("Buscar TODAS as reservas do usuário atual (ativas, passadas ou canceladas)")
+    public List<Reserva> buscarMinhasReservas(Long usuarioId) {
+        // Aqui buscamos filtrando pelo ID do usuário injetado no prompt,
+        // sem filtrar pelo status da reserva, garantindo o histórico completo!
+        return Reserva.list("usuario.id", usuarioId);
     }
 }
