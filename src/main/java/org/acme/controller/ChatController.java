@@ -3,7 +3,7 @@ package org.acme.controller;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-import org.acme.ai.ChatbotReservaAgent;
+import org.acme.agente.ChatbotReservaAgent;
 
 @Path("/api/chat")
 @Produces(MediaType.APPLICATION_JSON) // 1. Mudamos para retornar JSON
@@ -34,7 +34,7 @@ public class ChatController {
     // 3. Alteramos o retorno do método para a nossa nova classe
     public MensagemResponse interagirComBot(MensagemRequest request) {
         // O LangChain4j processa a IA e devolve o texto
-        String respostaDaIA = chatbot.conversar(request.usuarioId, request.mensagem);
+        String respostaDaIA = chatbot.conversar(request.usuarioId, request.usuarioId, request.mensagem);
 
         // Empacotamos o texto no objeto que será convertido em JSON
         return new MensagemResponse(respostaDaIA);

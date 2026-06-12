@@ -1,8 +1,9 @@
-package org.acme.ai;
+package org.acme.agente;
 
 import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
+import dev.langchain4j.service.V; // IMPORTANTE: Não esqueça este import!
 import io.quarkiverse.langchain4j.RegisterAiService;
 
 @RegisterAiService(tools = ReservaChatTools.class)
@@ -25,5 +26,11 @@ public interface ChatbotReservaAgent {
             "- 'ADMIN' pode cancelar qualquer reserva e pode usar a ferramenta de inativar posições.",
             "- NUNCA invente nomes de mesas ou posições. Sugira APENAS as que foram retornadas por 'buscarPosicoesDisponiveis'."
     })
-    String conversar(@MemoryId Long usuarioId, @UserMessage String mensagem);
+    // Injetamos o ID e a mensagem dinamicamente no prompt do Gemini
+    @UserMessage("Meu ID de usuário no sistema é: {id_usuario}\n\nO que eu preciso: {mensagem}")
+    String conversar(
+            @MemoryId Long memoryId,
+            @V("id_usuario") Long idUsuario,
+            @V("mensagem") String mensagem
+    );
 }
