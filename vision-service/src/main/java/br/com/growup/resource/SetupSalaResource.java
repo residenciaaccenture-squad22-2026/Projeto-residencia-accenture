@@ -1,7 +1,8 @@
 package br.com.growup.resource;
 
-import br.com.growup.dto.AnaliseHierarquicaDTO;
 import br.com.growup.dto.ProcessarSalaRequest;
+import br.com.growup.dto.SetupConfirmadoRequest;
+import br.com.growup.dto.AnaliseHierarquicaDTO;
 import br.com.growup.service.AiVisionService;
 import br.com.growup.service.SupabaseService;
 import jakarta.inject.Inject;
@@ -17,35 +18,48 @@ import java.util.Map;
 public class SetupSalaResource {
 
     @Inject
-    AiVisionService visionService;
+    AiVisionService aiVisionService;
 
     @Inject
     SupabaseService supabaseService;
 
+    // ETAPA 1: Apenas analisa a foto e devolve o rascunho
     @POST
+    @Path("/analisar")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response orquestrarCadastroDaSala(ProcessarSalaRequest request) {
-        
-        AnaliseHierarquicaDTO dadosIa = visionService.mapearPlantaHierarquica(request.imageUrl());
-
-        if (dadosIa.mesas() == null || dadosIa.mesas().isEmpty()) {
-            return Response.status(400).entity(Map.of("erro", "Nenhuma estrutura detectada.")).build();
+    public Response gerarRascunho(ProcessarSalaRequest request) {
+        try {
+            AnaliseHierarquicaDTO rascunho = aiVisionService.mapearPlantaHierarquica(request.imageUrl());
+            return Response.ok(rascunho).build();
+        } catch (Exception e) {
+            return Response.serverError().entity(Map.of("erro", e.getMessage())).build();
         }
+    }
 
-        String nomeSala = request.nomeSala() != null ? request.nomeSala() : dadosIa.nomeSugeridoSala();
-        Long salaId = supabaseService.criarSala(nomeSala, request.localizacao());
+    // ETAPA 2: Recebe o rascunho revisado e salva no banco
+    @POST
+    @Path("/confirmar")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response confirmarESalvar(SetupConfirmadoRequest request) {
+        try {
+            // 1. Cria a Sala
+            Long salaId = supabaseService.criarSala(request.nome(), request.localizacao());
 
-        int totalPosicoes = 0;
+            // 2. Cria as Mesas
+            for (AnaliseHierarquicaDTO.MesaIa mesa : request.analiseRevisada().mesas()) {
+                Long mesaId = supabaseService.criarMesa(salaId, mesa.codigoMesa());
 
-        for (AnaliseHierarquicaDTO.MesaIa mesa : dadosIa.mesas()) {
-            Long mesaId = supabaseService.criarMesa(salaId, mesa.codigoMesa());
-
-            if (mesa.posicoes() != null) {
+                // 3. Cria as Posições (Cadeiras)
                 for (AnaliseHierarquicaDTO.PosicaoIa cadeira : mesa.posicoes()) {
-                    Long posicaoId = supabaseService.criarPosicao(mesaId, cadeira.codigoCadeira(), cadeira.coordenadasX(), cadeira.coordenadasY());
-                    totalPosicoes++;
-
+                    Long posicaoId = supabaseService.criarPosicao(
+                                                                    mesaId, 
+                                                                    cadeira.codigoCadeira(), 
+                                                                    cadeira.coordenadasX(), 
+                                                                    cadeira.coordenadasY()
+                                                                );
+                    // 4. Cria os Recursos
                     if (cadeira.recursos() != null) {
                         for (AnaliseHierarquicaDTO.RecursoIa recurso : cadeira.recursos()) {
                             supabaseService.criarRecurso(posicaoId, recurso.nomeModelo(), recurso.categoria());
@@ -53,14 +67,10 @@ public class SetupSalaResource {
                     }
                 }
             }
+            return Response.ok(Map.of("status", "Setup salvo com sucesso!")).build();
+            
+        } catch (Exception e) {
+            return Response.serverError().entity(Map.of("erro", e.getMessage())).build();
         }
-
-        return Response.ok(Map.of(
-            "status", "SUCESSO",
-            "mensagem", "Infraestrutura da sala gerada e salva no banco!",
-            "sala_id", salaId,
-            "total_mesas", dadosIa.mesas().size(),
-            "total_posicoes", totalPosicoes
-        )).build();
     }
 }

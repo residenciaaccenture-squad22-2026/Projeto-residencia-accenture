@@ -1,0 +1,14 @@
+# Quarkus Configuration
+quarkus.http.port=8080
+
+# Integração Supabase
+SUPABASE_URL=
+SUPABASE_KEY=
+
+# Integração Gemini API
+AI_API_KEY=
+
+# Libera o Quarkus para receber requisições do frontend no navegador
+quarkus.http.cors=true
+quarkus.http.cors.origins=*
+# (Nota: O '*' libera qualquer porta no ambiente de desenvolvimento)
