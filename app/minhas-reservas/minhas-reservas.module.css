@@ -1,0 +1,282 @@
+.page {
+  min-height: 100vh;
+  background: #f6f7fb;
+  color: #111827;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+  padding: 14px 32px;
+}
+
+.logoArea {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.logoAccent {
+  color: #7c3aed;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.logoText {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.actions div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.actions span {
+  color: #7c3aed;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.actions strong {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.actions button,
+.card button,
+.blocked button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 8px;
+  background: #111827;
+  color: #ffffff;
+  padding: 0 14px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.actions button:hover,
+.card button:hover,
+.blocked button:hover {
+  background: #374151;
+}
+
+.card button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.main {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 32px 0 56px;
+}
+
+.hero,
+.card,
+.blocked {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.05);
+}
+
+.hero {
+  margin-bottom: 20px;
+  padding: 30px;
+}
+
+.eyebrow {
+  color: #7c3aed;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  max-width: 760px;
+  margin-top: 6px;
+  font-size: 36px;
+  line-height: 1.1;
+}
+
+.hero p:not(.eyebrow) {
+  max-width: 720px;
+  margin-top: 10px;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+.message {
+  margin-bottom: 18px;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.state {
+  display: flex;
+  min-height: 220px;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #4b5563;
+  font-weight: 800;
+  text-align: center;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px;
+}
+
+.card {
+  padding: 18px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cardHeader h2 {
+  margin-top: 4px;
+  font-size: 22px;
+  line-height: 1.15;
+}
+
+.active,
+.cancelled {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.details {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.details div {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+  padding: 10px 12px;
+}
+
+.details dt {
+  margin-bottom: 4px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.details dd {
+  color: #111827;
+  font-weight: 700;
+}
+
+.blocked {
+  width: min(520px, calc(100% - 32px));
+  margin: 12vh auto;
+  padding: 28px;
+  text-align: center;
+}
+
+.blocked h1 {
+  margin-bottom: 10px;
+  font-size: 28px;
+}
+
+.blocked p {
+  margin-bottom: 18px;
+  color: #4b5563;
+}
+
+@media (max-width: 760px) {
+  .header,
+  .actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .actions div {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 560px) {
+  .header {
+    padding: 16px 20px;
+  }
+
+  .main {
+    width: min(100% - 24px, 1180px);
+  }
+
+  .hero {
+    padding: 24px 18px;
+  }
+
+  .hero h1 {
+    font-size: 28px;
+  }
+}

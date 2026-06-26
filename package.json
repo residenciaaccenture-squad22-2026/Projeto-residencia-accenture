@@ -1,0 +1,30 @@
+{
+  "name": "meu-projeto-next",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --webpack",
+    "backend:dev": "cd backend && mvn.cmd quarkus:dev -Ddebug=false -Dquarkus.console.enabled=false -Dquarkus.test.continuous-testing=disabled",
+    "backend:test": "cd backend && mvn.cmd test",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.105.4",
+    "next": "16.2.4",
+    "postcss": "^8.5.14",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.4",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^5"
+  }
+}
